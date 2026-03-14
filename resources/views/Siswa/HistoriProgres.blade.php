@@ -331,7 +331,7 @@
 </head>
 
 <body>
-  {{-- udh dulu komennya=) --}}
+    {{-- udh dulu komennya=) --}}
 
     <input type="checkbox" id="menu-control">
     <label for="menu-control" class="sidebar-overlay"></label>
@@ -361,8 +361,8 @@
             <!-- Tanpa JS, link logout langsung mengarah ke halaman tujuan -->
             <form action="{{ url('Siswa/LogoutSiswa') }}" method="post">
                 @csrf
-                <button type="button"
-                    onclick="confirmlogout(this); return false;" class="btn btn-danger bg-opacity-25 border-0 w-100 py-3 rounded-4 fw-bold text-decoration-none d-block text-center"
+                <button type="button" onclick="confirmlogout(this); return false;"
+                    class="btn btn-danger bg-opacity-25 border-0 w-100 py-3 rounded-4 fw-bold text-decoration-none d-block text-center"
                     style="color: #fca5a5;">
                     <i class="fa-solid fa-power-off me-2"></i> Logout
                 </button>
@@ -553,50 +553,54 @@
                         @foreach ($progres as $item)
                             <div class="timeline-item mb-0">
                                 {{-- untuk mengubah warna status --}}
-                                @switch($item->status)
-                                    @case('menunggu')
-                                        <a href="/Siswa/RiwayatAspirasi/Progres/{{ $aspirasi->id_aspirasi }}" class="fw-bold small text-primary mb-0 text-decoration-none">
-                                            {{-- ucfirst untuk tulisan uppercase --}}
-                                            {{ ucfirst($item->status) }}
-                                        </a>
-                                        <p class="small text-muted">
-                                            {{ $item->tanggal_update }}
-                                        </p>
-                                    @break
+                                {{-- Bagian Header Status yang bisa diklik --}}
+                                <div style="cursor: pointer;" data-bs-toggle="collapse"
+                                    data-bs-target="#detail-{{ $item->id_progres }}" aria-expanded="false"
+                                    class="mb-1">
+                                    @switch($item->status)
+                                        @case('menunggu')
+                                            <p class="fw-bold small text-primary mb-0">
+                                                {{-- ucfirst untuk tulisan uppercase --}}
+                                                {{ ucfirst($item->status) }}
+                                            </p>
+                                            <p class="small text-muted">
+                                                {{ $item->tanggal_update }}
+                                            </p>
+                                        @break
 
-                                    @case('diproses')
-                                        <a class="fw-bold small text-primary mb-0 text-decoration-none">
-                                            {{-- ucfirst untuk tulisan uppercase --}}
-                                            {{ ucfirst($item->status) }}
-                                        </a>
-                                        <p class="small text-muted">
-                                            {{ $item->tanggal_update }}
-                                        </p>
-                                    @break
+                                        @case('diproses')
+                                            <p class="fw-bold small text-primary mb-0">
+                                                {{-- ucfirst untuk tulisan uppercase --}}
+                                                {{ ucfirst($item->status) }}
+                                            </p>
+                                            <p class="small text-muted">
+                                                {{ $item->tanggal_update }}
+                                            </p>
+                                        @break
 
-                                    @case('selesai')
-                                        <a class="fw-bold small text-success mb-0 text-decoration-none">
-                                            {{-- ucfirst untuk tulisan uppercase --}}
-                                            {{ ucfirst($item->status) }}
-                                        </a>
-                                        <p class="small text-muted">
-                                            {{ $item->tanggal_update }}
-                                        </p>
-                                    @break
+                                        @case('selesai')
+                                            <p class="fw-bold small text-success mb-0">
+                                                {{-- ucfirst untuk tulisan uppercase --}}
+                                                {{ ucfirst($item->status) }}
+                                            </p>
+                                            <p class="small text-muted">
+                                                {{ $item->tanggal_update }}
+                                            </p>
+                                        @break
 
-                                    @case('ditolak')
-                                        <a class="fw-bold small text-danger mb-0 text-decoration-none">
-                                            {{-- ucfirst untuk tulisan uppercase --}}
-                                            {{ ucfirst($item->status) }}
-                                        </a>
-                                        <p class="small text-muted">
-                                            {{ $item->tanggal_update }}
-                                        </p>
-                                    @break
+                                        @case('ditolak')
+                                            <p class="fw-bold small text-danger mb-0">
+                                                {{-- ucfirst untuk tulisan uppercase --}}
+                                                {{ ucfirst($item->status) }}
+                                            </p>
+                                            <p class="small text-muted">
+                                                {{ $item->tanggal_update }}
+                                            </p>
+                                        @break
 
-                                    @default
-                                @endswitch
-                            </div>
+                                        @default
+                                    @endswitch
+                                </div>
                         @endforeach
                         <div class="timeline-item">
                             <p class="mb-0 fw-bold small text-primary">Laporan Dikirim</p>
@@ -636,7 +640,8 @@
             }
         });
     }
-     function confirmlogout(btn) {
+
+    function confirmlogout(btn) {
         MyAlert.show({
             type: 'warning',
             title: 'Anda akan keluar?',

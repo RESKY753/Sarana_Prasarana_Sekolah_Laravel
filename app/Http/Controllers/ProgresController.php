@@ -20,7 +20,6 @@ class ProgresController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
@@ -28,8 +27,8 @@ class ProgresController extends Controller
      */
     public function store(Request $request)
     {
-        $id_admin = auth()->guard('admin')->user()->id_admin;
-
+        $id_admin = auth()->guard('admin')->user()->id_admin;//ambil id_admin dari sesi login
+        //validasi
         $request->validate(
             [
                 'ket_progres' => 'required'
@@ -39,7 +38,7 @@ class ProgresController extends Controller
             ]
         );
 
-        DB::table('progres_aspirasi')->insert(
+        DB::table('progres_aspirasi')->insert(//masukan data ke table progres aspirasi
             [
                 'id_aspirasi' => $request->id_aspirasi,
                 'id_admin' => $id_admin,
@@ -49,7 +48,7 @@ class ProgresController extends Controller
                 'umpan_balik' => $request->umpan_balik
             ]
         );
-
+            //alihkan ke dashboard admin dengan pesan success
         return redirect('Admin/DashboardAdmin')->with('success','Data berhasil ditambahkan');
     }
 

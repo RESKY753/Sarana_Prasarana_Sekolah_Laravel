@@ -75,7 +75,7 @@ class AspirasiController extends Controller
     }
     function store(Request $request)
     {
-        $id_siswa = auth('siswa')->user()->id_siswa;
+        $id_siswa = auth('siswa')->user()->id_siswa;//ambil id_siswa dari sesi login
 
         //memebuat validasi untuk form tambah nilai
         $request->validate(
@@ -93,7 +93,7 @@ class AspirasiController extends Controller
             ]
         );
         // perintah untuk memasukan data ketabel nilai
-        DB::table('aspirasi')->insert(
+        DB::table('aspirasi')->insert(//masukan data ke table aspirasi
             [
                 'id_siswa' => $id_siswa,
                 'id_kategori' => $request->id_kategori,
@@ -105,13 +105,13 @@ class AspirasiController extends Controller
                 'updated_at' => now()
             ]
         );
-        //mengarahkan ke url /nilai atau ke fungsi index atau tampilan nilai
+        //arahkan siswa ke dasboard jika tambah laporan berhasil, dengan pesan success
         return redirect('Siswa/DashboardSiswa')->with('success', "Data Berhasil Ditambahkan");
     }
-    function DetailAspirasiSiswa($id){
-        $aspirasi = DB::table('aspirasi')
-            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
-            ->select(
+    function DetailAspirasiSiswa($id){//tampilkan detail aspirasi sesuia id
+        $aspirasi = DB::table('aspirasi')//panggil tabel aspirasi
+            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')//join dengan kategori
+            ->select(//pilih kolom
             'aspirasi.id_aspirasi',
             'aspirasi.judul_aspirasi',
             'aspirasi.tanggal_lapor',
@@ -120,10 +120,10 @@ class AspirasiController extends Controller
             'aspirasi.ket_aspirasi',
             'kategori.ket_kategori'
             )
-            ->where('aspirasi.id_aspirasi', $id)
-            ->first();
+            ->where('aspirasi.id_aspirasi', $id)//tampilkan detail aspirasi dengan where sesuai dengan id di atas/id_aspirasi
+            ->first();//panggil satu data saja
 
-        $progres = DB::table('progres_aspirasi')
+        $progres = DB::table('progres_aspirasi')//paggila tabel progres
             ->join('admin', 'progres_aspirasi.id_admin', '=', 'admin.id_admin')
             ->select(
                 'progres_aspirasi.id_progres',
@@ -134,9 +134,9 @@ class AspirasiController extends Controller
                 'progres_aspirasi.umpan_balik'
             )
             ->where('id_aspirasi', $id)
-            ->orderBy('tanggal_update', 'desc')
-            ->get();
-
+            ->orderBy('tanggal_update', 'desc')//kelompokan sesuai tanggal update dan tampilkan data dengan tanggal terbaru paling atas(desc)
+            ->get();//ambil semua datanya
+            //kirim ke Siswa.DetailAspirasi untuk di eksekusi
             return view('Siswa.DetailAspirasiSiswa', compact('aspirasi', 'progres'));
     }
     function RiwayatAspirasiSiswa(){
@@ -216,7 +216,7 @@ class AspirasiController extends Controller
                 'aspirasi.ket_aspirasi',
                 'kategori.ket_kategori'
             )
-            ->where('aspirasi.id_aspirasi', $id)
+            ->where('aspirasi.id_aspirasi', $id)//tampilkan data sesuai dengan id_aspirasi dengan parameterr di atas
             ->first();
 
         $progres = DB::table('progres_aspirasi')
@@ -227,80 +227,155 @@ class AspirasiController extends Controller
                 'ket_progres',
                 'umpan_balik'
             )
-            ->where('id_aspirasi', $id)
+            ->where('id_aspirasi', $id)//sama
+            ->orderBy('tanggal_update', 'desc')
+            ->get();
+
+        return view('Siswa.RiwayatDetailAspirasiSiswa', compact('aspirasi', 'progres'));
+    }
+
+    //ini belum dipakai
+    function RiwayatProgresAspirasi($id)
+    {
+        $aspirasi = DB::table('aspirasi')
+            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
+            ->select(
+                'aspirasi.id_aspirasi',
+                'aspirasi.judul_aspirasi',
+                'aspirasi.tanggal_lapor',
+                'aspirasi.id_kategori',
+                'aspirasi.lokasi',
+                'aspirasi.ket_aspirasi',
+                'kategori.ket_kategori'
+            )
+            ->where('aspirasi.id_aspirasi', $id) //tampilkan data sesuai dengan id_aspirasi dengan parameterr di atas
+            ->first();
+
+        $progres = DB::table('progres_aspirasi')
+            ->select(
+                'id_progres',
+                'status',
+                'tanggal_update',
+                'ket_progres',
+                'umpan_balik'
+            )
+            ->where('id_aspirasi', $id) //sama
+            ->where('status','menunggu') //sama
             ->orderBy('tanggal_update', 'desc')
             ->get();
 
         return view('Siswa.RiwayatDetailAspirasiSiswa', compact('aspirasi', 'progres'));
     }
     function HapusAspirasiSiswa($id){
-        DB::table('aspirasi')
-        ->where('id_aspirasi', $id)
-        ->delete();
+        DB::table('aspirasi')//pagil tabel aspirasi
+        ->where('id_aspirasi', $id) //hapus data sesuai dengan id_aspirasi
+        ->delete();//perintah hapus
 
         return redirect('/Siswa/RiwayatAspirasiSiswa')->with('success', 'Data Berhasil Dihapus');
     
         }
     //=============================Untuk Admin=======================================================================================
 
-    function indexAdmin(){
+    function indexAdmin()
+    {
 
-        // 1. Membuat subquery untuk mencari ID progres TERAKHIR (tertinggi) untuk tiap aspirasi
-        // Kita gunakan id_progres (Primary Key) karena lebih akurat daripada tanggal (yang bisa kembar)
+        // 1. SUBQUERY: Mencari "Pemenang" ID Progres Terakhir
+        // Kita butuh ini karena satu aspirasi bisa punya banyak baris progres (Lapor -> Proses -> Selesai).
+        // Tanpa subquery ini, data aspirasi di tabel bakal muncul berulang-ulang (duplikat).
         $subqueryProgresTerbaru = DB::table('progres_aspirasi')
-            ->select(DB::raw('MAX(id_progres) as last_id')) // Ambil ID yang paling besar
-            ->groupBy('id_aspirasi'); // Kelompokkan berdasarkan aspirasi-nya
+            // DB::raw: Izin ke Laravel buat nulis perintah SQL murni 'MAX'
+            // MAX(id_progres): Mencari angka ID terbesar (karena ID terbesar = status terbaru)
+            // as last_id: Kasih nama panggilan 'last_id' biar gampang dipanggil nanti
+            ->select(DB::raw('MAX(id_progres) as last_id'))
+            // groupBy: Kelompokkan ID terbesar itu berdasarkan masing-masing aspirasi
+            ->groupBy('id_aspirasi');
 
-        // 2. Query Utama untuk mengambil data Aspirasi
+        // 2. QUERY UTAMA: Mengambil Data Aspirasi & Menempelkan Status Terbarunya
         $aspirasi = DB::table('aspirasi')
-            // Join ke tabel progres_aspirasi dengan kondisi khusus
+
+            /**
+             * FUNGSI ->leftJoin() : 
+             * 'Nempelin' tabel progres_aspirasi ke tabel aspirasi.
+             * Pake 'Left' supaya kalau ada aspirasi yang BELUM ADA progresnya, datanya nggak ilang.
+             */
             ->leftJoin('progres_aspirasi', function ($join) use ($subqueryProgresTerbaru) {
+
+                /**
+                 * FUNGSI $join->on() :
+                 * Ngasih tau Laravel kunci penghubungnya: Kolom id_aspirasi di kedua tabel.
+                 */
                 $join->on('aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
-                    // KUNCI UTAMA: Hanya join baris yang ID-nya ada di daftar ID terbaru tadi
+
+                    /**
+                     * FUNGSI ->whereIn() :
+                     * Filter 'Sakti' kita. Kita bilang ke database:
+                     * "Jangan ambil semua progres, ambil baris progres yang ID-nya 
+                     * masuk dalam daftar 'last_id' (terbesar) yang kita cari di subquery tadi!"
+                     */
                     ->whereIn('progres_aspirasi.id_progres', $subqueryProgresTerbaru);
             })
 
-            // Join ke tabel kategori untuk mengambil nama kategorinya
+            /**
+             * FUNGSI ->join() biasa (Inner Join):
+             * Menghubungkan tabel kategori dan siswa.
+             * Ini wajib ada pasangannya. Kalau id_kategori di aspirasi kosong, data gak bakal muncul.
+             */
             ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
             ->join('siswa', 'aspirasi.id_siswa', '=', 'siswa.id_siswa')
 
-
-            // Menentukan kolom mana saja yang mau ditampilkan di halaman Admin
+            /**
+             * FUNGSI ->select() :
+             * Milih kolom mana aja yang mau kita angkut ke View.
+             * NamaTabel.NamaKolom biar database gak bingung kalau ada nama kolom yang sama.
+             */
             ->select(
                 'aspirasi.id_aspirasi',
                 'aspirasi.judul_aspirasi',
                 'aspirasi.tanggal_lapor',
                 'aspirasi.lokasi',
                 'aspirasi.ket_aspirasi',
-                'progres_aspirasi.status',          // Ini otomatis jadi status yang paling baru
-                'progres_aspirasi.tanggal_update',  // Tanggal saat status diubah terakhir kali
-                'progres_aspirasi.ket_progres',  // Tanggal saat status diubah terakhir kali
-                'kategori.ket_kategori',             // Nama kategori (misal: Infrastruktur, dll)
-                'siswa.Nama'
+                'progres_aspirasi.status',        // Status TERBARU hasil filter MAX tadi
+                'progres_aspirasi.tanggal_update', // Kapan statusnya berubah
+                'progres_aspirasi.ket_progres',    // Catatan dari admin soal progresnya
+                'kategori.ket_kategori',           // Nama kategori (Infrastruktur/Layanan, dll)
+                'siswa.Nama'                       // Nama siswa yang lapor
             )
 
-            // MENGURUTKAN: Agar data yang baru diupdate/baru lapor muncul di paling atas
-            // DESC (Descending) artinya dari yang terbaru ke yang terlama
-            ->orderBy('progres_aspirasi.tanggal_update', 'desc') // Utamakan yang baru di-update
-            ->orderBy('aspirasi.tanggal_lapor', 'desc')         // Baru urutkan berdasarkan tanggal lapor
-            // Eksekusi query dan ambil semua datanya
+            /**
+             * FUNGSI ->orderBy() :
+             * Ngatur barisan. 'desc' (Descending) artinya dari yang paling baru ke lama.
+             */
+            ->orderBy('progres_aspirasi.tanggal_update', 'desc')
+            ->orderBy('aspirasi.tanggal_lapor', 'desc')
+
+            // Terakhir, tarik semua datanya!
             ->get();
+
+        // 3. PENDUKUNG DASHBOARD:
+        // Ambil baris pertama buat ditampilin di header (opsional)
         $data = $aspirasi->first() ?? (object)['status' => ''];
+
+        // Hitung total laporan buat di kotak statistik
         $totalData = DB::table('aspirasi')->count();
-        $dataSiswa = DB::table('siswa')
-        ->get();
-        $kategori = DB::table('kategori')
-        ->get();
-        // 3. Mengirim data ke view Admin/Dasboard_admin.blade.php
-        return view('Admin.Dasboard_admin', compact('data','aspirasi', 'totalData', 'dataSiswa', 'kategori'));
+
+        // Ambil data siswa & kategori buat isi dropdown di Modal (kalau mau tambah data)
+        $dataSiswa = DB::table('siswa')->get();
+        $kategori = DB::table('kategori')->get();
+
+        /**
+         * FUNGSI compact() :
+         * Cara simpel buat ngirim banyak variabel ke file Blade.
+         * Nama variabel di dalam kurung harus sama persis dengan nama variabel di atas.
+         */
+        return view('Admin.Dasboard_admin', compact('data', 'aspirasi', 'totalData', 'dataSiswa', 'kategori'));
     }
     ///belum di benerin
     function DetailAspirasiAdmin($id)
-    {
+    {   //panggil tabel aspirasi di variabel data
         $data = DB::table('aspirasi')
-            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
-            ->join('siswa','aspirasi.id_siswa','=','siswa.id_siswa')
-            ->select(
+            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')//join dengan tabel kategori unutk mengambil keterangan kategori
+            ->join('siswa','aspirasi.id_siswa','=','siswa.id_siswa')//join dengan tabel siswa untuk mengambil Nama siswa
+            ->select(//pilih kolom yang ingin di tampilkan
                 'aspirasi.id_aspirasi',
                 'aspirasi.judul_aspirasi',
                 'aspirasi.tanggal_lapor',
@@ -310,9 +385,9 @@ class AspirasiController extends Controller
                 'kategori.ket_kategori',
                 'siswa.Nama'
             )
-            ->where('aspirasi.id_aspirasi', $id)
-            ->first();
-
+            ->where('aspirasi.id_aspirasi', $id)//tampilkan aspirasi sesuai dengan id aspirasi dengan where
+            ->first();//panggil data pertamannya saja
+        // panggil tabel progres aspirasi di varibel progres
         $progres = DB::table('progres_aspirasi')
             ->select(
                 'id_progres',
@@ -322,16 +397,16 @@ class AspirasiController extends Controller
                 'umpan_balik'
             )
             ->where('id_aspirasi', $id)
-            ->orderBy('tanggal_update', 'desc')
-            ->get();
-
+            ->orderBy('tanggal_update', 'desc')//kelompokan berdasarkan tanggaal update,yang dimana tanggal yang paling baru akan tampil di paling atas(decs)
+            ->get();//get = ambil semua data
+            // kirim variabel data dan progres ke Admin.Dashboard_admin blade
         return view('Admin.Dasboard_admin', compact('data', 'progres'));
     }
     function RiwayatAdmin(){
-        $id_admin = auth()->guard('admin')->user()->id_admin;
-        $p = DB::table('progres_aspirasi')
-            ->join('aspirasi', 'progres_aspirasi.id_aspirasi', '=', 'aspirasi.id_aspirasi')
-            ->select(
+        $id_admin = auth()->guard('admin')->user()->id_admin;//mengambil id_admin dari sesi login admin
+        $p = DB::table('progres_aspirasi')//panggil tabel
+            ->join('aspirasi', 'progres_aspirasi.id_aspirasi', '=', 'aspirasi.id_aspirasi')//join tabel aspirasi
+            ->select(//pilih data kolom yang ingin di tampilkan
                 'progres_aspirasi.id_aspirasi',
                 'progres_aspirasi.tanggal_update',
                 'progres_aspirasi.umpan_balik',
@@ -339,8 +414,8 @@ class AspirasiController extends Controller
                 'progres_aspirasi.ket_progres',
                 'aspirasi.judul_aspirasi'
             )
-            ->where('id_admin', $id_admin)
-            ->orderBy('tanggal_update', 'desc')
+            ->where('id_admin', $id_admin)//tampilkan data sesuai id_admin dengan where yang variabel tadi kita buat
+            ->orderBy('tanggal_update', 'desc')//kelompokan data berdasarkan tanggal uppdate, dan tampilkan data dengan tanggal update yang terbaru paling atas
             ->get(); ///hasil colection atau banyak data karena tidak menggunakan first
 
         // 2. Gunakan method map() untuk "memodifikasi" setiap baris data

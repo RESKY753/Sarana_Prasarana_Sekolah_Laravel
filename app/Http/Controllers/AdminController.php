@@ -9,7 +9,8 @@ use App\Models\Aspirasi;
 use App\Models\Kategori;
 use App\Models\Siswa;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -76,7 +77,7 @@ class AdminController extends Controller
      */
     public function create()
     {
-        //
+        return view('Admin.TambahSiswa');
     }
 
     /**
@@ -84,7 +85,33 @@ class AdminController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate(
+            [
+                'Nama' => 'required',
+                'nis' => 'required|max:10',
+                'kelas' => 'required',
+                'password' => 'required|min:6'
+            ],
+            [
+                'Nama.required' => 'Nama siswa jangan dikosongin ya, bg!',
+                'nis.required' => 'NIS-nya diisi dulu.',
+                'password.min' => 'Password minimal 6 karakter.',
+                'password.required' => 'Isi password terlebih dahulu.',
+                'nis.max' => 'Maximal 10 karakter',
+                'kelas.required' => 'Kelas wajib di isi'
+            ]
+        );
+
+        DB::table('siswa')
+        ->insert([
+            'Nama' => $request->Nama,
+            'nis' => $request->nis,
+            'kelas' => $request->kelas,
+            'password' => Hash::make($request->password)
+        ]
+        );
+
+        return redirect('Admin/DataSiswa')->with('success','Siswa berhasil ditambahkan!');
     }
 
     /**
@@ -100,15 +127,76 @@ class AdminController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $siswa = DB::table('siswa')
+        ->get()
+        ->where('id_siswa', $id)->first();
+         
+        return view('Admin.EditSiswa', compact('siswa'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request)
     {
-        //
+        $id_admin = auth()->guard('admin')->user()->id_admin;
+
+        //validasi
+        $request->validate(
+            [
+                'username' => 'required',
+                'password' => 'nullable|min:6'
+            ],
+            [
+                'username.required' => 'isi username',
+            ]
+        );
+        //buat variabel data untuk menampung inputan username dari user
+        $data = ([
+            'username' => $request->username,
+        ]);
+
+        //Cek apakah user mengisi input password
+        if ($request->filled('password')) {
+            // Jika diisi, kita hash dulu baru masukkan ke array $data
+            $data['password'] = Hash::make($request->password);
+        }
+
+        DB::table('admin')
+        ->where('id_admin', $id_admin)
+        ->update($data);
+
+        return redirect()->back()->with('success', 'Profil berhasil di ubah!');
+    }
+
+    function updatesiswa(Request $request, string $id){
+        $request->validate([
+            'nis' => 'required',
+            'Nama' => 'required',
+            'kelas' => 'required',
+            'password' => 'nullable|min:6'
+        ],[
+            'nis.required' => 'Nis tidak boleh kosong!',
+            'Nama.required' => 'Nama tidak boleh kosong',
+            'kelas.required' => 'Pilih kelas',
+            'password.min' => 'Password minimal 6 karakter'
+        ]);
+
+        $data = ([
+            'nis' => $request->nis,
+            'Nama' => $request->Nama,
+            'kelas' => $request->kelas
+        ]);
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+            }
+
+        DB::table('siswa')
+        ->where('id_siswa', $id)
+        ->update($data);
+
+        return redirect('Admin/DataSiswa')->with('success', 'Data berhasil di ubah!');
     }
 
     /**
