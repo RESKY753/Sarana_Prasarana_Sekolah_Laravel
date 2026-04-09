@@ -261,6 +261,9 @@
                 <a href="#" class="nav-item-custom active">
                     <i class="fa-solid fa-list-check"></i> Riwayat
                 </a>
+                <a href="{{ url('Admin/Daftar_Aspirasi') }}" class="nav-item-custom">
+                    <i class="fa-solid fa-list-check"></i> Daftar Aspirasi
+                </a>
                 <a href="{{ url('Admin/DataSiswa') }}" class="nav-item-custom">
                     <i class="fa-solid fa-users"></i> Data Siswa
                 </a>
@@ -377,7 +380,7 @@
                                         <div>
                                             <h6 class="fw-bold mb-0">Memperbarui Tiket <a
                                                     class=" text-decoration-none"
-                                                    href="{{ url('Admin/DashboardAdmin') }}#aspirasi-231{{ $progres->id_aspirasi }}">#SPR-231{{ $progres->id_aspirasi }}</a>{{-- untukl menampilkan id_aspirasi dan jika di klik aka di alihkan ke laporannya langsung --}}
+                                                    href="{{ url('Admin/Daftar_Aspirasi') }}#aspirasi-231{{ $progres->id_aspirasi }}">#SPR-231{{ $progres->id_aspirasi }}</a>{{-- untukl menampilkan id_aspirasi dan jika di klik aka di alihkan ke laporannya langsung --}}
                                             </h6>
                                             <h6 class="fw-bold mb-0 ml-4 pt-1">{{ $progres->judul_aspirasi }}</h6>
                                             {{-- menampilkan judul aspirasi --}}
@@ -436,7 +439,7 @@
                                         <div>
                                             <h6 class="fw-bold mb-0">Memperbarui Tiket <a
                                                     class=" text-decoration-none"
-                                                    href="{{ url('Admin/DashboardAdmin') }}#aspirasi-231{{ $progres->id_aspirasi }}">#SPR-231{{ $progres->id_aspirasi }}</a>
+                                                    href="{{ url('Admin/Daftar_Aspirasi') }}#aspirasi-231{{ $progres->id_aspirasi }}">#SPR-231{{ $progres->id_aspirasi }}</a>
                                             </h6>
                                             <h6 class="fw-bold mb-0 ml-4 pt-1">{{ $progres->judul_aspirasi }}</h6>
                                             <p class="text-muted xsmall mb-0">Dilakukan pada
@@ -491,7 +494,7 @@
                                         <div>
                                             <h6 class="fw-bold mb-0">Memperbarui Tiket <a
                                                     class=" text-decoration-none"
-                                                    href="{{ url('Admin/DashboardAdmin') }}#aspirasi-231{{ $progres->id_aspirasi }}">#SPR-231{{ $progres->id_aspirasi }}</a>
+                                                    href="{{ url('Admin/Daftar_Aspirasi') }}#aspirasi-231{{ $progres->id_aspirasi }}">#SPR-231{{ $progres->id_aspirasi }}</a>
                                             </h6>
                                             <h6 class="fw-bold mb-0 ml-4 pt-1">{{ $progres->judul_aspirasi }}</h6>
                                             <p class="text-muted xsmall mb-0">Dilakukan pada

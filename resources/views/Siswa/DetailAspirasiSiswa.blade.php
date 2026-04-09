@@ -467,7 +467,7 @@
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-secondary btn-sm rounded-3 fw-bold">
+                                <button class="btn btn-outline-secondary btn-sm rounded-3 fw-bold" onclick="window.print()">
                                     <i class="fa-solid fa-print me-1"></i> Cetak
                                 </button>
                             </div>

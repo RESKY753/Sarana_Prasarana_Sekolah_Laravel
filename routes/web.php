@@ -49,6 +49,7 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::put('Admin/UpdateSiswa/{id}', [AdminController::class, 'updatesiswa']);
     Route::get('Admin/DataSiswa/Filter', [SiswaController::class, 'filterDataSiswa']);
     Route::delete('Admin/DataSiswa/Hapus/{id}', [SiswaController::class, 'HapusSiswa']);
+    Route::get('Admin/Daftar_Aspirasi', [AspirasiController::class, 'DaftarAspirasi']);
 });
 
 //===========================================================================================================

@@ -324,13 +324,13 @@
         <div class="sidebar-content">
             <nav class="sidebar-menu">
                 {{-- href{{ url() }} berfungsi untuk memindahkan tampilan jika tombol di klik --}}
-                <a href="{{ url('Admin/DashboardAdmin') }}" class="nav-item-custom active">
+                <a href="{{ url('Admin/DashboardAdmin') }}" class="nav-item-custom">
                     <i class="fa-solid fa-chart-line"></i> Dashboard
                 </a>
                 <a href="{{ url('Admin/Riwayat') }}" class="nav-item-custom">
                     <i class="fa-solid fa-list-check"></i> Riwayat
                 </a>
-                <a href="{{ url('Admin/Daftar_Aspirasi') }}" class="nav-item-custom">
+                <a href="{{ url('Admin/Daftar_Aspirasi') }}" class="nav-item-custom active">
                     <i class="fa-solid fa-list-check"></i> Daftar Aspirasi
                 </a>
                 <a href="{{ url('Admin/DataSiswa') }}" class="nav-item-custom">
@@ -495,76 +495,74 @@
                     <tbody>
                         {{-- perualangan sama seperti foreach, tapi bisa juga untuk mengecek data kosong --}}
                         @forelse ($aspirasi as $data)
-                            @if ($data->status == 'menunggu' || $data->status == 'diproses' || $data->status == '')
-                                {{-- menginisialisasi variabel aspirasi menjadi $data, fungsi forelse sama seperti foreach yang membedakan forelse bisa menampilkan tampilan yang kita atur jika data kosong --}}
-                                <tr id="aspirasi-231{{ $data->id_aspirasi }}">
-                                    <td><span class="fw-bold text-primary">{{ $data->tanggal_lapor }}</span></td>
-                                    {{-- tampilkan data tanggal lapor --}}
-                                    <td><span class="fw-bold text-primary">#SPR-231{{ $data->id_aspirasi }}</span>
-                                    </td>
-                                    {{-- tampilkan data id_aspirasi --}}
-                                    <td>
-                                        <div class="fw-bold">{{ $data->judul_aspirasi }}</div>{{-- tampilkan judul aspirasi --}}
-                                        <div class="text-muted small">{{ $data->lokasi }}</div>{{-- tampilkan lokasi --}}
-                                    </td>
-                                    <td>
-                                        @switch($data->status)
-                                            {{-- perkondisian dengan swicth yang mengecek isi status --}}
-                                            @case('menunggu')
-                                                {{-- jika status = menuggu maka tampilkan span dibawah --}}
-                                                <span
-                                                    class="status-badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">
-                                                    {{ ucfirst($data->status) }}{{-- ucfirst berfungsi untuk membuat data menjadi kapital di awal  --}}
-                                                </span>
-                                            @break
+                            {{-- menginisialisasi variabel aspirasi menjadi $data, fungsi forelse sama seperti foreach yang membedakan forelse bisa menampilkan tampilan yang kita atur jika data kosong --}}
+                            <tr id="aspirasi-231{{ $data->id_aspirasi }}">
+                                <td><span class="fw-bold text-primary">{{ $data->tanggal_lapor }}</span></td>
+                                {{-- tampilkan data tanggal lapor --}}
+                                <td><span class="fw-bold text-primary">#SPR-231{{ $data->id_aspirasi }}</span>
+                                </td>
+                                {{-- tampilkan data id_aspirasi --}}
+                                <td>
+                                    <div class="fw-bold">{{ $data->judul_aspirasi }}</div>{{-- tampilkan judul aspirasi --}}
+                                    <div class="text-muted small">{{ $data->lokasi }}</div>{{-- tampilkan lokasi --}}
+                                </td>
+                                <td>
+                                    @switch($data->status)
+                                        {{-- perkondisian dengan swicth yang mengecek isi status --}}
+                                        @case('menunggu')
+                                            {{-- jika status = menuggu maka tampilkan span dibawah --}}
+                                            <span
+                                                class="status-badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">
+                                                {{ ucfirst($data->status) }}{{-- ucfirst berfungsi untuk membuat data menjadi kapital di awal  --}}
+                                            </span>
+                                        @break
 
-                                            @case('diproses')
-                                                {{-- jika status = diproses maka tampilkan span dibawah --}}
-                                                <span
-                                                    class="status-badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
-                                                    {{ ucfirst($data->status) }}
-                                                </span>
-                                            @break
+                                        @case('diproses')
+                                            {{-- jika status = diproses maka tampilkan span dibawah --}}
+                                            <span
+                                                class="status-badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                                                {{ ucfirst($data->status) }}
+                                            </span>
+                                        @break
 
-                                            @case('selesai')
-                                                {{-- jika status = selesai maka tampilkan span dibawah --}}
-                                                <span
-                                                    class="status-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                        @case('selesai')
+                                            {{-- jika status = selesai maka tampilkan span dibawah --}}
+                                            <span
+                                                class="status-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
 
-                                                    {{ ucfirst($data->status) }}
-                                                </span>
-                                            @break
+                                                {{ ucfirst($data->status) }}
+                                            </span>
+                                        @break
 
-                                            @case('ditolak')
-                                                {{-- jika status = ditolak maka tampilkan span dibawah --}}
-                                                <span
-                                                    class="status-badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
+                                        @case('ditolak')
+                                            {{-- jika status = ditolak maka tampilkan span dibawah --}}
+                                            <span
+                                                class="status-badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
 
-                                                    {{ ucfirst($data->status) }}
-                                                </span>
-                                            @break
+                                                {{ ucfirst($data->status) }}
+                                            </span>
+                                        @break
 
-                                            @default
-                                                {{-- Kalau status kosong / null tampilkan span dibawah --}}
-                                                <span
-                                                    class="status-badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                                        @default
+                                            {{-- Kalau status kosong / null tampilkan span dibawah --}}
+                                            <span
+                                                class="status-badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
 
-                                                    Baru
-                                                </span>
-                                                @endswitch{{-- akhir switch --}}
+                                                Baru
+                                            </span>
+                                            @endswitch{{-- akhir switch --}}
 
-                                                </span>
-                                            </td>
-                                            <td class="text-center">
-                                                {{-- ini adalah fungsi unutk mengisi data dari db dengan menggunakan jd dengan get element berdasarkan atribut id --}}
-                                                <button class="action-btn" title="Kelola Aspirasi" data-bs-toggle="modal"
-                                                    data-bs-target="#actionModal"
-                                                    onclick="populateModal('#SPR-231{{ $data->id_aspirasi }}','{{ $data->id_aspirasi }}','{{ $data->Nama }}','{{ $data->judul_aspirasi }}','{{ $data->lokasi }}','{{ $data->status }}','{{ $data->ket_aspirasi }}','{{ $data->tanggal_update }}','{{ $data->tanggal_lapor }}', '{{ $data->ket_progres }}')">
-                                                    <i class="fa-solid fa-gear"></i>{{-- fungsi untuk mengambil data dari db dan memasukannya ke dalam elemen sesuai dengan id yang ada di parameter --}}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endif
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            {{-- ini adalah fungsi unutk mengisi data dari db dengan menggunakan jd dengan get element berdasarkan atribut id --}}
+                                            <button class="action-btn" title="Kelola Aspirasi" data-bs-toggle="modal"
+                                                data-bs-target="#actionModal"
+                                                onclick="populateModal('#SPR-231{{ $data->id_aspirasi }}','{{ $data->id_aspirasi }}','{{ $data->Nama }}','{{ $data->judul_aspirasi }}','{{ $data->lokasi }}','{{ $data->status }}','{{ $data->ket_aspirasi }}','{{ $data->tanggal_update }}','{{ $data->tanggal_lapor }}', '{{ $data->ket_progres }}')">
+                                                <i class="fa-solid fa-gear"></i>{{-- fungsi untuk mengambil data dari db dan memasukannya ke dalam elemen sesuai dengan id yang ada di parameter --}}
+                                            </button>
+                                        </td>
+                                    </tr>
                                     {{-- empty buat ngecek data apakah kosong, kalau kosong tampilin kodde dibawah --}}
                                     @empty
                                         {{-- kalau tidak ada laporan yang ini tampil --}}

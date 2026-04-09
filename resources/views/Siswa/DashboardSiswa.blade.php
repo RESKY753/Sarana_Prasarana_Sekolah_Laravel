@@ -351,7 +351,7 @@
             </div>
 
             <!-- Reports Grid -->
-            <h5 class="fw-800 mb-4">Semua laporan</h5>
+            <h5 class="fw-800 mb-4">Laporan Saya</h5>
 
             <div class="row g-3 align-items-stretch">
                 {{-- perulangan untuk menampilkan banyak data yang data aspirasinya di ambil dari aspirasicontrollers --}}

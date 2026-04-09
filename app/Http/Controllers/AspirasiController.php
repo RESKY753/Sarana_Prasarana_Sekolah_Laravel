@@ -24,6 +24,7 @@ class AspirasiController extends Controller
         //     )
         //     ->orderBy('tanggal_update', 'desc')
         //     ->get();
+        $id_siswa = auth('siswa')->user()->id_siswa; //ambil id_siswa dari sesi login
 
         // Subquery: ambil progres TERBARU untuk setiap id_aspirasi
         $latestProgres = DB::table('progres_aspirasi as p1')
@@ -58,6 +59,7 @@ class AspirasiController extends Controller
                 'kategori.ket_kategori'
             )
             ->orderBy('tanggal_update', 'desc')
+            ->where('id_siswa', $id_siswa)
 
             // Ambil semua hasil
             ->get();
@@ -356,7 +358,24 @@ class AspirasiController extends Controller
         $data = $aspirasi->first() ?? (object)['status' => ''];
 
         // Hitung total laporan buat di kotak statistik
-        $totalData = DB::table('aspirasi')->count();
+        $totalData = DB::table('aspirasi')
+            // 1. Tempelkan tabel progres (pake Left Join biar yang NULL/Baru tetep kehitung)
+            ->leftJoin('progres_aspirasi', 'aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
+
+            // 2. KUNCI UTAMA: Hanya ambil baris progres yang ID-nya paling besar (Terbaru)
+            // Ini biar kalau ada 10 riwayat, yang diambil cuma 1 yang paling baru
+            ->whereIn('progres_aspirasi.id_progres', function ($query) {
+                $query->selectRaw('MAX(id_progres)')
+                    ->from('progres_aspirasi')
+                    ->groupBy('id_aspirasi');
+            })
+
+            // 3. Baru deh filter statusnya (Menunggu atau Diproses)
+            ->whereIn('progres_aspirasi.status', ['menunggu', 'diproses'])
+
+            // 4. Eksekusi hitung
+            ->count();
+        // $totalData = DB::table('aspirasi')->count();
 
         // Ambil data siswa & kategori buat isi dropdown di Modal (kalau mau tambah data)
         $dataSiswa = DB::table('siswa')->get();
@@ -368,6 +387,101 @@ class AspirasiController extends Controller
          * Nama variabel di dalam kurung harus sama persis dengan nama variabel di atas.
          */
         return view('Admin.Dasboard_admin', compact('data', 'aspirasi', 'totalData', 'dataSiswa', 'kategori'));
+    }
+
+
+    function DaftarAspirasi()
+    {
+
+        // 1. SUBQUERY: Mencari "Pemenang" ID Progres Terakhir
+        // Kita butuh ini karena satu aspirasi bisa punya banyak baris progres (Lapor -> Proses -> Selesai).
+        // Tanpa subquery ini, data aspirasi di tabel bakal muncul berulang-ulang (duplikat).
+        $subqueryProgresTerbaru = DB::table('progres_aspirasi')
+            // DB::raw: Izin ke Laravel buat nulis perintah SQL murni 'MAX'
+            // MAX(id_progres): Mencari angka ID terbesar (karena ID terbesar = status terbaru)
+            // as last_id: Kasih nama panggilan 'last_id' biar gampang dipanggil nanti
+            ->select(DB::raw('MAX(id_progres) as last_id'))
+            // groupBy: Kelompokkan ID terbesar itu berdasarkan masing-masing aspirasi
+            ->groupBy('id_aspirasi');
+
+        // 2. QUERY UTAMA: Mengambil Data Aspirasi & Menempelkan Status Terbarunya
+        $aspirasi = DB::table('aspirasi')
+
+            /**
+             * FUNGSI ->leftJoin() : 
+             * 'Nempelin' tabel progres_aspirasi ke tabel aspirasi.
+             * Pake 'Left' supaya kalau ada aspirasi yang BELUM ADA progresnya, datanya nggak ilang.
+             */
+            ->leftJoin('progres_aspirasi', function ($join) use ($subqueryProgresTerbaru) {
+
+                /**
+                 * FUNGSI $join->on() :
+                 * Ngasih tau Laravel kunci penghubungnya: Kolom id_aspirasi di kedua tabel.
+                 */
+                $join->on('aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
+
+                    /**
+                     * FUNGSI ->whereIn() :
+                     * Filter 'Sakti' kita. Kita bilang ke database:
+                     * "Jangan ambil semua progres, ambil baris progres yang ID-nya 
+                     * masuk dalam daftar 'last_id' (terbesar) yang kita cari di subquery tadi!"
+                     */
+                    ->whereIn('progres_aspirasi.id_progres', $subqueryProgresTerbaru);
+            })
+
+            /**
+             * FUNGSI ->join() biasa (Inner Join):
+             * Menghubungkan tabel kategori dan siswa.
+             * Ini wajib ada pasangannya. Kalau id_kategori di aspirasi kosong, data gak bakal muncul.
+             */
+            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
+            ->join('siswa', 'aspirasi.id_siswa', '=', 'siswa.id_siswa')
+
+            /**
+             * FUNGSI ->select() :
+             * Milih kolom mana aja yang mau kita angkut ke View.
+             * NamaTabel.NamaKolom biar database gak bingung kalau ada nama kolom yang sama.
+             */
+            ->select(
+                'aspirasi.id_aspirasi',
+                'aspirasi.judul_aspirasi',
+                'aspirasi.tanggal_lapor',
+                'aspirasi.lokasi',
+                'aspirasi.ket_aspirasi',
+                'progres_aspirasi.status',        // Status TERBARU hasil filter MAX tadi
+                'progres_aspirasi.tanggal_update', // Kapan statusnya berubah
+                'progres_aspirasi.ket_progres',    // Catatan dari admin soal progresnya
+                'kategori.ket_kategori',           // Nama kategori (Infrastruktur/Layanan, dll)
+                'siswa.Nama'                       // Nama siswa yang lapor
+            )
+
+            /**
+             * FUNGSI ->orderBy() :
+             * Ngatur barisan. 'desc' (Descending) artinya dari yang paling baru ke lama.
+             */
+            ->orderBy('progres_aspirasi.tanggal_update', 'desc')
+            ->orderBy('aspirasi.tanggal_lapor', 'desc')
+
+            // Terakhir, tarik semua datanya!
+            ->get();
+
+        // 3. PENDUKUNG DASHBOARD:
+        // Ambil baris pertama buat ditampilin di header (opsional)
+        $data = $aspirasi->first() ?? (object)['status' => ''];
+
+        // Hitung total laporan buat di kotak statistik
+        $totalData = DB::table('aspirasi')->count();
+
+        // Ambil data siswa & kategori buat isi dropdown di Modal (kalau mau tambah data)
+        $dataSiswa = DB::table('siswa')->get();
+        $kategori = DB::table('kategori')->get();
+
+        /**
+         * FUNGSI compact() :
+         * Cara simpel buat ngirim banyak variabel ke file Blade.
+         * Nama variabel di dalam kurung harus sama persis dengan nama variabel di atas.
+         */
+        return view('Admin.DaftarAspirasi', compact('data', 'aspirasi', 'totalData', 'dataSiswa', 'kategori'));
     }
     ///belum di benerin
     function DetailAspirasiAdmin($id)

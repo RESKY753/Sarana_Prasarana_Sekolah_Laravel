@@ -297,6 +297,9 @@
                 <a href="{{ url('Admin/Riwayat') }}" class="nav-item-custom">
                     <i class="fa-solid fa-list-check"></i> Riwayat
                 </a>
+                <a href="{{ url('Admin/Daftar_Aspirasi') }}" class="nav-item-custom">
+                    <i class="fa-solid fa-list-check"></i> Daftar Aspirasi
+                </a>
                 <a href="#" class="nav-item-custom active">
                     <i class="fa-solid fa-users"></i> Data Siswa
                 </a>
