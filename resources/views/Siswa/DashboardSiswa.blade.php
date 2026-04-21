@@ -526,7 +526,7 @@
                 showCancel: true,
                 confirmText: 'Ya, Keluar!',
                 cancelText: 'Batal',
-                autoClose: false, // <--- INI KUNCINYA BANG! Biar gak nutup sendiri
+                autoClose: false, // Biar gak nutup sendiri
                 closeOnOverlay: false, // Biar gak sengaja ke-close pas klik luar box
                 onConfirm: function() {
                     // Baru beneran hapus kalau diklik "Ya"
