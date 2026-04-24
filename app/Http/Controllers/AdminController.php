@@ -84,7 +84,7 @@ class AdminController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
+    {     //validasi dari request
         $request->validate(
             [
                 'Nama' => 'required',
@@ -103,14 +103,14 @@ class AdminController extends Controller
         );
 
         DB::table('siswa')
-        ->insert([
+        ->insert([//perintah untuk menambahkan data ke db
             'Nama' => $request->Nama,
             'nis' => $request->nis,
             'kelas' => $request->kelas,
             'password' => Hash::make($request->password)
         ]
         );
-
+        //berpindah kehalaman admin/Datasiswa dengan pesan success data berhasil di tambahkan
         return redirect('Admin/DataSiswa')->with('success','Siswa berhasil ditambahkan!');
     }
 
@@ -188,13 +188,13 @@ class AdminController extends Controller
             'kelas' => $request->kelas
         ]);
 
-        if ($request->filled('password')) {
+        if ($request->filled('password')) {//jika password di isi maka password akan di hash
             $data['password'] = Hash::make($request->password);
             }
 
         DB::table('siswa')
-        ->where('id_siswa', $id)
-        ->update($data);
+        ->where('id_siswa', $id)//update siswa yang dimana update sesuai id siswa
+        ->update($data);//perintah update data ke db
 
         return redirect('Admin/DataSiswa')->with('success', 'Data berhasil di ubah!');
     }
