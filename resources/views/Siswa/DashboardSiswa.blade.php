@@ -6,14 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SarprasCare | Portal Siswa (Pure CSS)</title>
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-    <!-- Font Awesome 6.5.1 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
@@ -260,37 +257,82 @@
             flex-direction: column;
             justify-content: space-between;
         }
+
+        /* --- STYLE TAMBAHAN KHUSUS CHAT KOTAK --- */
+        .chat-btn-trigger {
+            background: var(--slate-100);
+            color: var(--primary-dark);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .chat-btn-trigger:hover {
+            background: var(--student-blue);
+            color: var(--white);
+        }
+
+        #chat-stream-box {
+            height: 350px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-bubble.me {
+            background: var(--student-blue);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.admin-reply {
+            background: var(--slate-200);
+            color: var(--primary-dark);
+            border-bottom-left-radius: 4px;
+        }
     </style>
     <link rel="stylesheet" href="{{ asset('Css/MyAlert.css') }}">
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 
 <body>
 
-    <!-- Checkbox sebagai pengganti state JS -->
     <input type="checkbox" id="menu-control">
 
-    <!-- Overlay (diklik untuk menutup menu) -->
     <label for="menu-control" class="sidebar-overlay"></label>
 
-    <!-- Sidebar -->
     <aside class="sidebar-wrapper">
         <div class="sidebar-header">
-            {{-- ini untuk judul --}}
             <h2 class="brand-title">Sarpras<span style="color:var(--accent-gold)">Care</span></h2>
             <p class="mb-0 text-muted small" style="letter-spacing: 1px; font-size: 0.65rem;">PORTAL SISWA</p>
         </div>
 
         <div class="sidebar-content">
             <nav class="sidebar-menu">
-                {{-- ini adalah tombol untuk berpindah ke halaman dashboard siswa --}}
                 <a href="{{ url('/Siswa/DashboardSiswa') }}" class="nav-item-custom active">
                     <i class="fa-solid fa-shapes"></i> Beranda
                 </a>
-                {{-- ini adalah tombol untuk berpindah ke halaman FormAspirasi --}}
                 <a href="{{ url('/Siswa/KirimAspirasi') }}" class="nav-item-custom">
                     <i class="fa-solid fa-paper-plane"></i> Kirim Laporan
                 </a>
-                {{-- ini adalah tombol untuk berpindah ke halaman RiwayatAspirasiSiswa --}}
                 <a href="/Siswa/RiwayatAspirasiSiswa" class="nav-item-custom">
                     <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Saya
                 </a>
@@ -298,7 +340,6 @@
         </div>
 
         <div class="sidebar-footer">
-            <!-- Tombol Logout -->
             <form action="{{ url('Siswa/LogoutSiswa') }}" method="post">
                 @csrf
                 <button onclick="confirmHapus(this); return false;"
@@ -310,12 +351,10 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
 
         <header class="top-bar">
             <div class="d-flex align-items-center">
-                <!-- Label ini terhubung ke checkbox #menu-control -->
                 <label for="menu-control" class="hamburger-label d-lg-none me-3">
                     <i class="fa-solid fa-bars-staggered"></i>
                 </label>
@@ -324,12 +363,20 @@
 
             <div class="d-flex align-items-center gap-3">
                 <div class="text-end d-none d-sm-block">
-                    {{-- ini untuk mengambil nama dari db sesuai session atau sesuai dengan sesi login --}}
                     <p class="mb-0 fw-bold small">{{ auth('siswa')->user()->Nama }}</p>
-                    {{-- ini untuk mengambil kelas dari db sesuai session atau sesuai dengan sesi login --}}
                     <p class="mb-0 text-muted small">{{ auth('siswa')->user()->kelas }}</p>
                 </div>
-                {{-- untuk menggenerated gambar profile sesuai dengan nama yang di amabil dari sesi login --}}
+
+                <button class="chat-btn-trigger position-relative" data-bs-toggle="modal"
+                    data-bs-target="#modalChatAdmin" title="Chat Admin">
+                    <i class="fa-solid fa-comments"></i>
+                    <span id="badge-chat-global"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                        style="font-size: 0.65rem; padding: 4px 6px;">
+                        0
+                    </span>
+                </button>
+
                 <a href="#" data-bs-toggle="modal" data-bs-target="#modalEditProfile">
                     <img src="https://ui-avatars.com/api/?name={{ auth('siswa')->user()->Nama }}&background=4361ee&color=fff"
                         class="rounded-circle border border-2 border-white" width="40">
@@ -339,9 +386,7 @@
 
         <div class="content-body p-4 p-lg-5">
 
-            <!-- Banner -->
             <div class="welcome-banner text-center text-md-start">
-                {{-- ini untuk mengambil nama dari db sesuai session atau sesuai dengan sesi login --}}
                 <h1 class="fw-800 mb-2">Halo, {{ auth('siswa')->user()->Nama }}! 👋</h1>
                 <p class="opacity-75 mb-4 small">Laporkan kerusakan fasilitas sekolahmu di sini.</p>
                 <a href="{{ url('/Siswa/KirimAspirasi') }}"
@@ -350,68 +395,59 @@
                 </a>
             </div>
 
-            <!-- Reports Grid -->
             <h5 class="fw-800 mb-4">Laporan Saya</h5>
 
             <div class="row g-3 align-items-stretch">
-                {{-- perulangan untuk menampilkan banyak data yang data aspirasinya di ambil dari aspirasicontrollers --}}
                 @foreach ($aspirasi as $data)
                     <div class="col-md-6 col-xl-4 d-flex">
                         <div class="report-card shadow-sm w-100">
                             <div>
                                 @switch($data->status)
-                                    {{-- menentukan style status dengan switch --}}
                                     @case('menunggu')
-                                        {{-- jika menunggu tampilkan ini --}}
                                         <div class="status-badge badge-pending">
                                             {{ ucfirst($data->status) }}
                                         </div>
                                     @break
 
                                     @case('diproses')
-                                        {{-- sama --}}
                                         <div class="status-badge  badge-diproses">
                                             {{ ucfirst($data->status) }}
                                         </div>
                                     @break
 
                                     @case('selesai')
-                                        {{-- sama --}}
                                         <div class="status-badge badge-success">
                                             {{ ucfirst($data->status) }}
                                         </div>
                                     @break
 
                                     @case('ditolak')
-                                        {{-- sama  --}}
                                         <div class="status-badge badge-danger">
                                             {{ ucfirst($data->status) }}
                                         </div>
                                     @break
 
                                     @default
-                                        {{-- Kalau status kosong / null --}}
                                         <div class="status-badge badge-info">
                                             Baru
                                         </div>
                                 @endswitch
 
                                 <h6 class="report-title">
-                                    {{ $data->judul_aspirasi }}{{-- tampilkan judul --}}
+                                    {{ $data->judul_aspirasi }}
                                 </h6>
 
                                 <div class="report-info">
                                     <div>
                                         <i class="fa-solid fa-location-dot"></i>
-                                        {{ $data->lokasi }}{{-- tampilkan lokasi --}}
+                                        {{ $data->lokasi }}
                                     </div>
                                     <div>
                                         <i class="fa-solid fa-calendar"></i>
-                                        {{ $data->tanggal_lapor }}{{-- tampilkan tanggal lapor --}}
+                                        {{ $data->tanggal_lapor }}
                                     </div>
                                 </div>
                             </div>
-                            {{-- lihat detail aspirasi sesuai dengan  id_aspirasinya --}}
                             <a href="/Siswa/Aspirasi/{{ $data->id_aspirasi }}" class="btn-detail mt-3">Lihat Detail</a>
                         </div>
                     </div>
@@ -419,6 +455,52 @@
             </div>
 
     </main>
+
+    <div class="modal fade" id="modalChatAdmin" tabindex="-1" aria-labelledby="modalChatAdminLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header bg-dark text-white rounded-top-4 border-0 py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="btn-back-to-list" class="btn btn-sm btn-link text-white p-0 me-2 d-none"
+                            onclick="bukaDaftarChat()">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <div class="bg-success rounded-circle" style="width: 10px; height: 10px;"></div>
+                        <h5 class="fw-bold mb-0" id="modalChatAdminLabel" style="font-size: 1.05rem;">Pesan
+                            SarprasCare</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <div id="screen-chat-list" class="p-2">
+                        <div class="text-muted small p-2 fw-bold border-bottom mb-1">Daftar Obrolan</div>
+                        <div id="container-daftar-admin" style="max-height: 400px; overflow-y: auto;">
+                            <div class="text-center text-muted my-4 py-2 small">Belum ada riwayat obrolan</div>
+                        </div>
+                    </div>
+
+                    <div id="screen-room-chat" class="d-none">
+                        <div id="chat-stream-box"
+                            style="height: 350px; overflow-y: auto; padding: 15px; background: #f8fafc;"></div>
+
+                        <div class="p-3 border-top bg-white rounded-bottom-4">
+                            <div class="input-group">
+                                <input type="text" id="siswa-message-input"
+                                    class="form-control border-0 bg-light rounded-pill px-3"
+                                    placeholder="Ketik pesan keluhan...">
+                                <button class="btn btn-primary rounded-pill ms-2 px-3"
+                                    onclick="kirimPesanSiswaDashboard()">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="modalEditProfile" tabindex="-1" aria-labelledby="modalEditProfileLabel"
         aria-hidden="true">
@@ -451,14 +533,14 @@
                             <label class="form-label small fw-bold text-muted">Nis</label>
                             <input name="" type="number"
                                 class="form-control rounded-3 border-slate-200 bg-light"
-                                value="{{ auth('siswa')->user()->nis }}" readonly>{{-- masukan username dari sesi login --}}
+                                value="{{ auth('siswa')->user()->nis }}" readonly>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted">Username</label>
                             <input name="Nama" type="text"
                                 class="form-control rounded-3 border-slate-200 bg-light"
-                                value="{{ auth('siswa')->user()->Nama }}" required>{{-- masukan username dari sesi login --}}
+                                value="{{ auth('siswa')->user()->Nama }}" required>
                             @error('Nama')
                                 <div class="text-danger small mt-1 fw-bold">{{ $message }}</div>
                             @enderror
@@ -468,7 +550,7 @@
                             <label class="form-label small fw-bold text-muted">Kelas</label>
                             <input name="username" type="text"
                                 class="form-control rounded-3 border-slate-200 bg-light"
-                                value="{{ auth('siswa')->user()->kelas }}" readonly>{{-- masukan username dari sesi login --}}
+                                value="{{ auth('siswa')->user()->kelas }}" readonly>
                         </div>
 
                         <div class="mb-3">
@@ -479,7 +561,6 @@
                                 <div class="text-danger small mt-1 fw-bold">{{ $message }}</div>
                             @enderror
                         </div>
-
 
                         <div class="d-grid">
                             <button class="btn btn-primary py-2 rounded-3 fw-bold shadow-sm">
@@ -492,32 +573,364 @@
         </div>
     </div>
 
+    <!-- KOTAK TOAST CUSTOM SISWA (MELAYANG DI ATAS LAYAR - ANTI GAGAL) -->
+    <div id="customChatToastSiswa"
+        style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: 320px; background: #0f172a; color: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; padding: 16px; border-left: 5px solid #25d366; transition: all 0.3s ease;">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="background: rgba(37, 211, 102, 0.2); padding: 8px; border-radius: 8px; color: #25d366;">
+                <i class="fa-solid fa-bell fs-5"></i>
+            </div>
+            <div style="flex-grow: 1;">
+                <strong id="custom-siswa-toast-title"
+                    style="display: block; font-size: 0.9rem; color: #f3f4f6; margin-bottom: 2px;">Balasan Admin
+                    Masuk!</strong>
+                <span id="custom-siswa-toast-body"
+                    style="font-size: 0.8rem; color: #cbd5e1; display: block; line-height: 1.4;">Admin telah membalas
+                    pesanmu.</span>
+            </div>
+            <button onclick="document.getElementById('customChatToastSiswa').style.display = 'none'"
+                style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">&times;</button>
+        </div>
+    </div>
+
     <script src="{{ asset('Js/MyAlert.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    {{-- untuk alert --}}
     <script>
-        // 1. Cek kalau ada pesan sukses dari Controller
+        // ISI DENGAN BLOK DATA DARI FIREBASE CONFIG KAMU YANG TADI DI NOTEPAD
+        const firebaseConfig = {
+            apiKey: "{{ env('MIX_FIREBASE_API_KEY') }}",
+            authDomain: "sarpascarechat.firebaseapp.com",
+            databaseURL: "{{ env('MIX_FIREBASE_DATABASE_URL') }}",
+            projectId: "{{ env('MIX_FIREBASE_PROJECT_ID') }}",
+            storageBucket: "sarpascarechat.firebasestorage.app",
+            messagingSenderId: "{{ env('MIX_FIREBASE_MESSAGING_SENDER_ID') }}",
+            appId: "{{ env('MIX_FIREBASE_APP_ID') }}",
+            measurementId: "G-03MNS2WXDL"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+
+        const currentStudentName = "{{ auth('siswa')->user()->Nama }}";
+        const cleanStudentNode = currentStudentName.replace(/[.#$\[\]]/g, "-");
+
+        // Referensi ke root chat siswa ini: chats/Nama-Siswa
+        const studentRootRef = database.ref('chats/' + cleanStudentNode);
+
+        let activeAdminTarget = ""; // Menyimpan admin yang sedang dibuka chatnya
+        let activeChatListener = null; // Menyimpan fungsi pemantau pesan aktif
+        let lastTotalUnreadSiswa = null; // Tracker penyimpan status unread sisi siswa (BARU)
+
+        // ==========================================
+        // 1. ENGINE REAL-TIME: DETEKSI DAFTAR CHAT, HITUNG NOTIFIKASI & TOAST SISI SISWA
+        // ==========================================
+        studentRootRef.on('value', (snapshot) => {
+            const containerDaftar = document.getElementById('container-daftar-admin') || document.getElementById(
+                'detail-container-daftar-admin');
+            const badgeGlobal = document.getElementById('badge-chat-global');
+
+            if (!snapshot.exists()) {
+                if (containerDaftar) containerDaftar.innerHTML =
+                    `<div class="text-center text-muted my-4 py-2 small">Belum ada riwayat obrolan</div>`;
+                if (badgeGlobal) badgeGlobal.classList.add('d-none');
+                lastTotalUnreadSiswa = 0;
+                return;
+            }
+
+            let htmlDaftar = "";
+            let totalUnreadGlobalSiswa = 0;
+            let latestAdminName = "Admin Sarpras";
+            let latestAdminMsg = "Mengirim pesan baru";
+            const batasWaktu7Hari = Date.now() - (7 * 24 * 60 * 60 * 1000); // Retensi 7 Hari
+
+            // MENGGUNAKAN FOREACH BAWAAN FIREBASE (Jauh lebih stabil & aman)
+            snapshot.forEach((adminSnapshot) => {
+                const adminNodeKey = adminSnapshot.key; // Mengambil nama admin/node (Contoh: Admin-Pusat)
+
+                let lastMessageText = "Belum ada pesan";
+                let lastMessageTime = "";
+                let unreadCount = 0;
+                let lastTimestamp = 0;
+                let hasValidMessages = false;
+
+                // Loop isi pesan di dalam node admin ini
+                adminSnapshot.forEach((msgSnapshot) => {
+                    const msgKey = msgSnapshot.key;
+                    const msgData = msgSnapshot.val();
+                    if (!msgData) return;
+
+                    // Cek Aturan 7 Hari (Hapus jika kadaluwarsa)
+                    if (msgData.timestamp && msgData.timestamp < batasWaktu7Hari) {
+                        studentRootRef.child(`${adminNodeKey}/${msgKey}`).remove();
+                        return;
+                    }
+
+                    hasValidMessages = true;
+                    if (msgData.message && !msgData.message.includes(
+                        '📢 *Menanyakan Progres Tiket')) {
+                        lastMessageText = msgData.message;
+                    } else if (msgData.message && msgData.message.includes(
+                            '📢 *Menanyakan Progres Tiket') && lastMessageText ===
+                        "Belum ada pesan") {
+                        lastMessageText = "🎯 Menanyakan Progres Laporan";
+                    }
+
+                    lastTimestamp = msgData.timestamp;
+
+                    // Hitung Unread jika pengirim adalah Admin
+                    if (msgData.role !== 'siswa' && msgData.is_read !== true) {
+                        unreadCount++;
+                        totalUnreadGlobalSiswa++;
+                        latestAdminName = msgData.sender || "Admin";
+                        latestAdminMsg = msgData.message || "Mengirim pesan baru";
+                    }
+                });
+
+                // Jika tidak ada pesan valid atau habis terhapus sistem 7 hari, lewati admin ini
+                if (!hasValidMessages) return;
+
+                // Ambil waktu dari pesan paling terakhir
+                if (lastTimestamp) {
+                    const date = new Date(lastTimestamp);
+                    lastMessageTime = date.toLocaleDateString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+
+                let badgeUnreadHtml = unreadCount > 0 ?
+                    `<span class="badge rounded-pill bg-danger ms-auto" style="font-size: 0.7rem;">${unreadCount}</span>` :
+                    '';
+                const namaAdminAsli = adminNodeKey.replace(/-/g, " ");
+
+                // Tentukan fungsi click modal secara fleksibel (apakah di halaman detail atau dashboard)
+                const fungsiKlik = typeof bukaRoomChatDetail === 'function' ?
+                    `bukaRoomChatDetail('${adminNodeKey}')` : `bukaRoomChat('${adminNodeKey}')`;
+
+                htmlDaftar += `
+                    <div class="d-flex align-items-center p-3 border-bottom list-group-item-action" style="cursor: pointer; transition: 0.2s;" onclick="${fungsiKlik}">
+                        <img src="https://ui-avatars.com/api/?name=${namaAdminAsli}&background=64748b&color=fff" class="rounded-circle me-3" width="40">
+                        <div class="flex-grow-1" style="max-width: 70%;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="small text-dark d-block text-truncate">${namaAdminAsli}</strong>
+                                <span class="text-muted" style="font-size: 0.65rem;">${lastMessageTime}</span>
+                            </div>
+                            <div class="text-muted small text-truncate" style="margin-top: 2px;">
+                                ${lastMessageText}
+                            </div>
+                        </div>
+                        ${badgeUnreadHtml}
+                    </div>
+                `;
+            });
+
+            if (containerDaftar) {
+                containerDaftar.innerHTML = htmlDaftar !== "" ? htmlDaftar :
+                    `<div class="text-center text-muted my-4 py-2 small">Belum ada riwayat obrolan</div>`;
+            }
+
+            // Update Angka Notifikasi Global di Atas Tombol Chat
+            if (badgeGlobal) {
+                if (totalUnreadGlobalSiswa > 0) {
+                    badgeGlobal.innerText = totalUnreadGlobalSiswa;
+                    badgeGlobal.classList.remove('d-none');
+                } else {
+                    badgeGlobal.classList.add('d-none');
+                }
+            }
+
+            // ==========================================
+            // LOGIKA PEMICU POP-UP TOAST CUSTOM SISI SISWA (BARU - ANTI CRASH)
+            // ==========================================
+            const toastSiswa = document.getElementById('customChatToastSiswa');
+
+            if (toastSiswa && totalUnreadGlobalSiswa > 0) {
+                let pemicuToastSiswa = false;
+
+                // KONDISI 1: Siswa baru refresh web & ada pesan unread tertunggak dari admin
+                if (lastTotalUnreadSiswa === null) {
+                    document.getElementById('custom-siswa-toast-title').innerText = "Pesan Belum Dibaca";
+                    document.getElementById('custom-siswa-toast-body').innerText =
+                        `Ada ${totalUnreadGlobalSiswa} balasan dari Admin menunggu tanggapanmu.`;
+                    pemicuToastSiswa = true;
+                }
+                // KONDISI 2: Saat web kebuka tiba-tiba ada chat masuk baru dari admin
+                else if (totalUnreadGlobalSiswa > lastTotalUnreadSiswa) {
+                    document.getElementById('custom-siswa-toast-title').innerText =
+                        `Balasan dari ${latestAdminName}`;
+                    document.getElementById('custom-siswa-toast-body').innerText = (latestAdminMsg && latestAdminMsg
+                            .includes('📢 *Menanyakan Progres Tiket')) ? "🎯 Menanyakan Progres Laporan" :
+                        latestAdminMsg;
+                    pemicuToastSiswa = true;
+                }
+
+                if (pemicuToastSiswa) {
+                    toastSiswa.style.display = 'block';
+                    try {
+                        playNotificationSound();
+                    } catch (e) {}
+
+                    setTimeout(() => {
+                        toastSiswa.style.display = 'none';
+                    }, 5000);
+                }
+            }
+
+            lastTotalUnreadSiswa = totalUnreadGlobalSiswa;
+        });
+
+        // ==========================================
+        // 2. LOGIKA INTERAKSI: PERPINDAHAN WINDOWS CHAT
+        // ==========================================
+        function bukaRoomChat(adminNodeKey) {
+            activeAdminTarget = adminNodeKey;
+            const namaAdminAsli = adminNodeKey.replace(/-/g, " ");
+
+            // Atur UI Header Modal
+            document.getElementById('modalChatAdminLabel').innerText = namaAdminAsli;
+            document.getElementById('btn-back-to-list').classList.remove('d-none');
+
+            // Pindah Screen
+            document.getElementById('screen-chat-list').classList.add('d-none');
+            document.getElementById('screen-room-chat').classList.remove('d-none');
+
+            const chatStream = document.getElementById('chat-stream-box');
+            chatStream.innerHTML = ""; // Bersihkan layar chat lama
+
+            if (activeChatListener) {
+                studentRootRef.child(adminNodeKey).off('child_added', activeChatListener);
+            }
+
+            const currentChatRef = studentRootRef.child(adminNodeKey);
+
+            // KETIKA CHAT DIBUKA: Tandai semua pesan dari admin ini sebagai SUDAH DIBACA (is_read: true)
+            currentChatRef.once('value', (snapshot) => {
+                const msgs = snapshot.val();
+                if (msgs) {
+                    Object.keys(msgs).forEach((key) => {
+                        if (msgs[key].role !== 'siswa') {
+                            currentChatRef.child(key).update({
+                                is_read: true
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Hidupkan listener real-time untuk room chat yang aktif dibuka (FIXED FILTER LOG)
+            activeChatListener = currentChatRef.on('child_added', (snapshot) => {
+                const payload = snapshot.val();
+                if (!payload) return;
+
+                // FILTER: Jika pesan mengandung teks otomatis tiket, JANGAN TAMPILKAN di dashboard beranda
+                if (payload.message && payload.message.includes('📢 *Menanyakan Progres Tiket')) return;
+
+                // Format Jam Menit & Hari
+                let formatWaktu = "";
+                if (payload.timestamp) {
+                    const date = new Date(payload.timestamp);
+                    const infoHari = date.toLocaleDateString('id-ID', {
+                        weekday: 'short'
+                    });
+                    const jam = String(date.getHours()).padStart(2, '0');
+                    const menit = String(date.getMinutes()).padStart(2, '0');
+                    formatWaktu = `${infoHari}, ${jam}:${menit}`;
+                }
+
+                // Tentukan gaya styling balon chat (Siswa kanan, Admin kiri)
+                let bubbleStyle = 'me-auto chat-bubble admin-reply';
+                if (payload.role === 'siswa') {
+                    bubbleStyle = 'ms-auto chat-bubble me';
+                }
+
+                let alignTime = payload.role === 'siswa' ? 'text-end text-white-50' : 'text-start text-muted';
+
+                // Cetak obrolan murni
+                chatStream.innerHTML += `
+                    <div class="d-flex w-100">
+                        <div class="${bubbleStyle}">
+                            <strong>${payload.sender}:</strong><br>
+                            ${payload.message}
+                            <div class="${alignTime}" style="font-size: 0.7rem; margin-top: 4px;">${formatWaktu}</div>
+                        </div>
+                    </div>`;
+
+                chatStream.scrollTop = chatStream.scrollHeight; // Auto gulir ke bawah
+            });
+        }
+
+        function bukaDaftarChat() {
+            activeAdminTarget = "";
+            document.getElementById('modalChatAdminLabel').innerText = "Pesan SarprasCare";
+            document.getElementById('btn-back-to-list').classList.add('d-none');
+
+            document.getElementById('screen-chat-list').classList.remove('d-none');
+            document.getElementById('screen-room-chat').classList.add('d-none');
+        }
+
+        // Fungsi Kirim Pesan dari Dashboard
+        function kirimPesanSiswaDashboard() {
+            const field = document.getElementById('siswa-message-input');
+            const teks = field.value.trim();
+
+            if (teks !== "" && activeAdminTarget !== "") {
+                database.ref('chats/' + cleanStudentNode + '/' + activeAdminTarget).push({
+                    sender: currentStudentName,
+                    role: 'siswa',
+                    message: teks,
+                    timestamp: Date.now(),
+                    is_read: false
+                });
+                field.value = "";
+            }
+        }
+
+        // Jalankan trigger enter key pada input chat dashboard
+        document.getElementById('siswa-message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                kirimPesanSiswaDashboard();
+            }
+        });
+
+        // Simulasi sound notifikasi web sederhana menggunakan Audio API bawaan browser
+        function playNotificationSound() {
+            const context = new(window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, context.currentTime); // Nada D5 suara ting bening
+            osc.connect(gain);
+            gain.connect(context.destination);
+            osc.start();
+            gain.gain.setValueAtTime(0.3, context.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.15);
+            osc.stop(context.currentTime + 0.15);
+        }
+    </script>
+
+    <script>
         @if (session('success'))
-            // Ganti 'tampilkanAlert' dengan nama fungsi yang ada di MyAlert.js Abang
             MyAlert.show({
                 type: 'success',
                 title: 'Berhasil!',
                 message: "{{ session('success') }}",
-                autoClose: 3000, // 3000 = 3 detik
+                autoClose: 3000,
                 confirmText: 'Sip!'
             });
         @endif
 
-        // 2. Cek kalau ada pesan error (misal: login gagal)
         @if (session('error'))
             MyAlert.show({
                 type: 'error',
                 title: 'error!',
                 message: '{{ session('error') }}',
-                autoClose: 3000, // 3000 = 3 detik
+                autoClose: 3000,
                 confirmText: 'Sip!'
             });
         @endif
+
         function confirmHapus(btn) {
             MyAlert.show({
                 type: 'warning',
@@ -526,10 +939,9 @@
                 showCancel: true,
                 confirmText: 'Ya, Keluar!',
                 cancelText: 'Batal',
-                autoClose: false, // Biar gak nutup sendiri
-                closeOnOverlay: false, // Biar gak sengaja ke-close pas klik luar box
+                autoClose: false,
+                closeOnOverlay: false,
                 onConfirm: function() {
-                    // Baru beneran hapus kalau diklik "Ya"
                     btn.closest('form').submit();
                 }
             });

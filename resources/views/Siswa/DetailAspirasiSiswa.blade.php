@@ -6,14 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SarprasCare | Detail Laporan</title>
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-    <!-- Font Awesome 6.5.1 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
@@ -110,7 +107,7 @@
 
         .nav-item-custom:hover,
         .nav-item-custom.active {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.1);
             color: var(--white);
         }
 
@@ -326,7 +323,53 @@
                 padding: 0 20px;
             }
         }
+
+        /* --- STYLING BALON CHAT POP-UP --- */
+        #detail-chat-stream {
+            height: 350px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-bubble.me {
+            background: var(--student-blue);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.admin-reply {
+            background: var(--slate-200);
+            color: var(--primary-dark);
+            border-bottom-left-radius: 4px;
+        }
+
+        .ticket-context-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #b45309;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <link rel="stylesheet" href="{{ asset('Css/MyAlert.css') }}">
 
@@ -335,7 +378,6 @@
     <input type="checkbox" id="menu-control">
     <label for="menu-control" class="sidebar-overlay"></label>
 
-    <!-- Sidebar -->
     <aside class="sidebar-wrapper">
         <div class="sidebar-header">
             <h2 class="brand-title">Sarpras<span style="color:var(--accent-gold)">Care</span></h2>
@@ -357,7 +399,6 @@
         </div>
 
         <div class="sidebar-footer">
-            <!-- Tanpa JS, link logout langsung mengarah ke halaman tujuan -->
             <form action="{{ url('Siswa/LogoutSiswa') }}" method="post">
                 @csrf
                 <button onclick="confirmlogout(this); return false;"
@@ -380,7 +421,7 @@
 
             <div class="d-flex align-items-center gap-3">
                 <div class="text-end d-none d-sm-block">
-                    <p class="mb-0 fw-bold small">{{ auth('siswa')->user()->Nama }}</p>{{-- tampilkan nama yang diambil dari sesi login --}}
+                    <p class="mb-0 fw-bold small">{{ auth('siswa')->user()->Nama }}</p>
                     <p class="mb-0 text-muted small">{{ auth('siswa')->user()->kelas }}</p>
                 </div>
                 <img src="https://ui-avatars.com/api/?name={{ auth('siswa')->user()->Nama }}&background=4361ee&color=fff"
@@ -392,15 +433,12 @@
             <div class="row justify-content-center">
                 <div class="col-lg-10 col-xl-9">
 
-                    <!-- Header Page -->
                     <div class="mb-4 d-flex align-items-center justify-content-between">
                         <div>
                             <h3 class="fw-800 mb-1">Detail Progres Laporan</h3>
                             <p class="text-muted small">Nomor Tiket: <span
                                     class="fw-bold text-primary">#SPR-231{{ $aspirasi->id_aspirasi }}</span></p>
-                            {{-- tampilkan id_aspirasi --}}
                         </div>
-                        {{-- tombol kembali --}}
                         <a href="/Siswa/DashboardSiswa"
                             class="btn btn-light rounded-3 btn-sm fw-bold text-muted border">
                             <i class="fa-solid fa-arrow-left me-1"></i> Kembali
@@ -408,72 +446,61 @@
                     </div>
 
                     <div class="detail-container">
-                        <!-- Header Card -->
                         <div class="detail-header">
                             <div>
-                                <h4 class="fw-700 mb-1">{{ $aspirasi->judul_aspirasi }}</h4>{{-- tampilkan judul --}}
+                                <h4 class="fw-700 mb-1">{{ $aspirasi->judul_aspirasi }}</h4>
                                 <div class="d-flex align-items-center gap-2">
 
                                     @php
                                         $status = $progres->first()->status ?? 'baru';
                                     @endphp
-                                    {{-- perkondisian untuk menentukan warna status --}}
                                     @switch($status)
                                         @case('menunggu')
                                             <span class="badge-status badge-menunggu">
-                                                {{-- menggunkan firs karena menggunakan get --}}
-                                                {{-- {{ $progres->first()->status }} --}} Menunggu
+                                                Menunggu
                                             </span>
                                         @break
 
                                         @case('diproses')
                                             <span class="badge-status badge-process">
-                                                {{-- menggunkan firs karena menggunakan get --}}
-                                                {{-- {{ $progres->first()->status }} --}}
                                                 Diproses
                                             </span>
                                         @break
 
                                         @case('selesai')
                                             <span class="badge-status badge-selesai">
-                                                {{-- menggunkan firs karena menggunakan get --}}
-                                                {{-- {{ $progres->first()->status }} --}}
                                                 Selesai
                                             </span>
                                         @break
 
                                         @case('ditolak')
                                             <span class="badge-status badge-ditolak">
-                                                {{-- menggunkan firs karena menggunakan get --}}
-                                                {{-- {{ $progres->first()->status }} --}}
                                                 Ditolak
                                             </span>
                                         @break
 
                                         @default
-                                            {{-- Kalau status kosong / null --}}
                                             <span class="badge-status badge-baru">
                                                 Baru
                                             </span>
                                     @endswitch
                                     <span class="text-muted small">• Update terakhir:
                                         @if ($progres->isNotEmpty())
-                                            {{-- progres tidak boleh kosong --}}
                                             {{ $progres->first()->tanggal_update }}
-                                            @else{{-- kalau kosong ini akan tampil --}}
+                                        @else
                                             Belum ada Update
                                         @endif
                                     </span>
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-secondary btn-sm rounded-3 fw-bold" onclick="window.print()">
+                                <button class="btn btn-outline-secondary btn-sm rounded-3 fw-bold"
+                                    onclick="window.print()">
                                     <i class="fa-solid fa-print me-1"></i> Cetak
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Informasi Utama -->
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Kategori</label>
@@ -485,7 +512,6 @@
                             </div>
                         </div>
 
-                        <!-- Deskripsi Siswa -->
                         <div class="content-section">
                             <label class="section-label">
                                 <i class="fa-solid fa-comment-dots"></i> Deskripsi Laporan Anda
@@ -495,7 +521,6 @@
                             </div>
                         </div>
 
-                        <!-- KETERANGAN PROGRES (Admin/Teknisi) -->
                         <div class="content-section">
                             <label class="section-label text-primary">
                                 <i class="fa-solid fa-spinner"></i> Keterangan Progres Admin
@@ -513,9 +538,7 @@
                                         @endif
                                     </small>
                                 </div>
-                                {{-- mengecek apakah ada datanya --}}
                                 @if ($progres->isNotEmpty())
-                                    {{-- menggunkan firs karena menggunakan get --}}
                                     {{ $progres->first()->ket_progres }}
                                 @else
                                     Menunggu Respon
@@ -523,7 +546,6 @@
                             </div>
                         </div>
 
-                        <!-- UMPAN BALIK / PESAN ADMIN -->
                         <div class="content-section">
                             <label class="section-label text-success">
                                 <i class="fa-solid fa-envelope-open-text"></i> Umpan Balik Admin
@@ -531,11 +553,10 @@
                             <div class="box-content box-feedback">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <i class="fa-solid fa-user-shield"></i>
-                                    <span class="fw-bold small">Admin Sarpras({{ $progres->first()->username }})</span>
+                                    <span class="fw-bold small">Admin
+                                        Sarpras({{ $progres->first()->username ?? 'System' }})</span>
                                 </div>
-                                {{-- mengecek apakah datanya --}}
                                 @if ($progres->isNotEmpty())
-                                    {{-- menggunakan first karena menggunakan get --}}
                                     {{ $progres->first()->umpan_balik }}
                                 @else
                                     Belum ada umpan balik
@@ -547,13 +568,12 @@
                         <div class="timeline-container">
                             <h6 class="fw-800 mb-4 text-uppercase small" style="letter-spacing: 1px;">Histori Status
                             </h6>
-                            {{-- mengecek apakah status kosong kalau status kosong hilangkan div dengan display:none --}}
+
                             @foreach ($progres as $item)
                                 <div class="timeline-item mb-0">
                                     @switch($item->status)
                                         @case('menunggu')
                                             <p class="fw-bold small text-primary mb-0">
-                                                {{-- ucfirst untuk tulisan uppercase --}}
                                                 {{ ucfirst($item->status) }}
                                             </p>
                                             <p class="small text-muted">
@@ -563,7 +583,6 @@
 
                                         @case('diproses')
                                             <p class="fw-bold small text-primary mb-0">
-                                                {{-- ucfirst untuk tulisan uppercase --}}
                                                 {{ ucfirst($item->status) }}
                                             </p>
                                             <p class="small text-muted">
@@ -573,7 +592,6 @@
 
                                         @case('selesai')
                                             <p class="fw-bold small text-success mb-0">
-                                                {{-- ucfirst untuk tulisan uppercase --}}
                                                 {{ ucfirst($item->status) }}
                                             </p>
                                             <p class="small text-muted">
@@ -583,18 +601,16 @@
 
                                         @case('ditolak')
                                             <p class="fw-bold small text-danger mb-0">
-                                                {{-- ucfirst untuk tulisan uppercase --}}
                                                 {{ ucfirst($item->status) }}
                                             </p>
                                             <p class="small text-muted">
                                                 {{ $item->tanggal_update }}
                                             </p>
                                         @break
-
-                                        @default
-                                    @endswitch
+                                    @endswitch <!-- <--- PASTIKAN TAG INI ADA SEBELUM DIV PENUTUP TIMELINE ITEM -->
                                 </div>
                             @endforeach
+
                             <div class="timeline-item">
                                 <p class="mb-0 fw-bold small text-primary">Laporan Dikirim</p>
                                 <p class="small text-muted mb-0">{{ $aspirasi->tanggal_lapor }}</p>
@@ -602,17 +618,317 @@
                         </div>
                     </div>
 
-                    <!-- Helper Note -->
                     <div class="p-3 rounded-4 bg-light border text-center">
-                        <p class="small text-muted mb-0">Butuh bantuan lebih lanjut terkait laporan ini? <a
-                                href="#" class="fw-bold text-primary">Hubungi Admin</a></p>
+                        <p class="small text-muted mb-0">Butuh bantuan lebih lanjut terkait laporan ini?
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#modalChatDetailReport"
+                                class="fw-bold text-primary">
+                                <i class="fa-solid fa-comments me-1"></i>Hubungi Admin
+                            </a>
+                        </p>
                     </div>
 
                 </div>
             </div>
         </div>
     </main>
+
+    <div class="modal fade" id="modalChatDetailReport" tabindex="-1" aria-labelledby="modalChatDetailReportLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header bg-dark text-white rounded-top-4 border-0 py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="detail-btn-back" class="btn btn-sm btn-link text-white p-0 me-2 d-none"
+                            onclick="bukaDaftarChatDetail()">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <div class="bg-success rounded-circle" style="width: 10px; height: 10px;"></div>
+                        <h5 class="fw-bold mb-0" id="modalChatDetailReportLabel" style="font-size: 1.05rem;">
+                            Chat Layanan Sarpras
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <div id="detail-screen-chat-list" class="p-2 d-none">
+                        <div class="text-muted small p-2 fw-bold border-bottom mb-1">Daftar Obrolan</div>
+                        <div id="detail-container-daftar-admin" style="max-height: 400px; overflow-y: auto;">
+                            <div class="text-center text-muted my-4 py-2 small">Belum ada riwayat obrolan</div>
+                        </div>
+                    </div>
+
+                    <div id="detail-screen-room-chat">
+                        <div id="detail-chat-stream"></div>
+
+                        <div class="p-3 border-top bg-white rounded-bottom-4">
+                            <div class="input-group">
+                                <input type="text" id="detail-msg-input"
+                                    class="form-control border-0 bg-light rounded-pill px-3"
+                                    placeholder="Ketik pesan keluhan lanjutan...">
+                                <button class="btn btn-primary rounded-pill ms-2 px-3"
+                                    onclick="kirimPesanDetailSiswa()">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="{{ asset('Js/MyAlert.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // MASUKKAN KREDENSIAL TOKEN FIREBASE ASLI MILIKMU DISINI
+        const firebaseConfig = {
+            apiKey: "{{ env('MIX_FIREBASE_API_KEY') }}",
+            authDomain: "sarpascarechat.firebaseapp.com",
+            databaseURL: "{{ env('MIX_FIREBASE_DATABASE_URL') }}",
+            projectId: "{{ env('MIX_FIREBASE_PROJECT_ID') }}",
+            storageBucket: "sarpascarechat.firebasestorage.app",
+            messagingSenderId: "{{ env('MIX_FIREBASE_MESSAGING_SENDER_ID') }}",
+            appId: "{{ env('MIX_FIREBASE_APP_ID') }}",
+            measurementId: "G-03MNS2WXDL"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+
+        // Parameter Identifikasi Sesi Pengguna & Laporan Aktif
+        const currentStudentName = "{{ auth('siswa')->user()->Nama }}";
+        const currentTicketNumber = "#SPR-231{{ $aspirasi->id_aspirasi }}";
+        const currentReportTitle = "{{ $aspirasi->judul_aspirasi }}";
+
+        @php
+            $targetAdmin = 'Admin Pusat';
+            if ($progres->isNotEmpty() && $progres->first()->username) {
+                $targetAdmin = $progres->first()->username;
+            }
+        @endphp
+
+        const defaultAdminTarget = "{{ $targetAdmin }}";
+        let currentAdminTarget = defaultAdminTarget; // Dinamis bisa berubah kalau pindah chat
+
+        const cleanStudentNode = currentStudentName.replace(/[.#$\[\]]/g, "-");
+        const studentRootRef = database.ref('chats/' + cleanStudentNode);
+
+        let chatDetailRef = database.ref('chats/' + cleanStudentNode + '/' + currentAdminTarget.replace(/[.#$\[\]]/g, "-"));
+        let activeChatListener = null;
+
+        // Fungsi Kirim Pesan Manual Siswa
+        function kirimPesanDetailSiswa() {
+            const field = document.getElementById('detail-msg-input');
+            const teks = field.value.trim();
+
+            if (teks !== "") {
+                chatDetailRef.push({
+                    sender: currentStudentName,
+                    role: 'siswa',
+                    message: teks,
+                    timestamp: Date.now()
+                });
+                field.value = "";
+            }
+        }
+
+        // Jalankan trigger enter key pada input chat
+        document.getElementById('detail-msg-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                kirimPesanDetailSiswa();
+            }
+        });
+
+        // Deteksi Trigger Ketika Dialog Box Pertama Kali Diklik
+        let isContextSent = false;
+        const modalChatEl = document.getElementById('modalChatDetailReport');
+        modalChatEl.addEventListener('shown.bs.modal', function() {
+            // Pas pertama buka, pastikan langsung masuk ke room chat laporan ini
+            bukaRoomChatDetail(currentAdminTarget.replace(/[.#$\[\]]/g, "-"));
+            document.getElementById('detail-btn-back').classList.remove('d-none'); // Munculkan panah kembali
+
+            if (!isContextSent && currentAdminTarget === defaultAdminTarget) {
+                chatDetailRef.push({
+                    sender: currentStudentName,
+                    role: 'siswa',
+                    message: `📢 *Menanyakan Progres Tiket ${currentTicketNumber}*\nLaporan: ${currentReportTitle}`,
+                    timestamp: Date.now()
+                });
+                isContextSent = true;
+            }
+        });
+
+        // KUNCI UTAMA: Fungsi memantau isi pesan room yang sedang aktif
+        function initRoomChatListener() {
+            if (activeChatListener) {
+                chatDetailRef.off('child_added', activeChatListener);
+            }
+
+            const viewContainer = document.getElementById('detail-chat-stream');
+            viewContainer.innerHTML = ""; // bersihkan obrolan lama
+
+            activeChatListener = chatDetailRef.on('child_added', (snapshot) => {
+                const dataPayload = snapshot.val();
+
+                let formatWaktu = "";
+                if (dataPayload.timestamp) {
+                    const date = new Date(dataPayload.timestamp);
+                    const infoHari = date.toLocaleDateString('id-ID', {
+                        weekday: 'short'
+                    });
+                    const jam = String(date.getHours()).padStart(2, '0');
+                    const menit = String(date.getMinutes()).padStart(2, '0');
+                    formatWaktu = `${infoHari}, ${jam}:${menit}`;
+                }
+
+                let bubbleStyle = 'me-auto chat-bubble admin-reply';
+                if (dataPayload.role === 'siswa') {
+                    bubbleStyle = dataPayload.message.includes('📢 *Menanyakan Progres Tiket') ?
+                        'mx-auto ticket-context-box text-center border' :
+                        'ms-auto chat-bubble me';
+                }
+
+                if (dataPayload.message.includes('📢 *Menanyakan Progres Tiket')) {
+                    viewContainer.innerHTML +=
+                        `<div class="${bubbleStyle}"><i class="fa-solid fa-info-circle"></i> ${dataPayload.message.replace(/\n/g, '<br>')}</div>`;
+                } else {
+                    let alignTime = dataPayload.role === 'siswa' ? 'text-end text-white-50' :
+                        'text-start text-muted';
+                    viewContainer.innerHTML +=
+                        `<div class="d-flex w-100">
+                            <div class="${bubbleStyle}">
+                                <strong>${dataPayload.sender}:</strong><br>
+                                ${dataPayload.message}
+                                <div class="${alignTime}" style="font-size: 0.7rem; margin-top: 4px;">${formatWaktu}</div>
+                            </div>
+                        </div>`;
+                }
+                viewContainer.scrollTop = viewContainer.scrollHeight;
+            });
+        }
+
+        // FUNGSI NAVIGASI 1: KLIK PANAH KEMBALI KELUAR KE DAFTAR CHAT ALL ADMIN
+        // FUNGSI NAVIGASI 1: KEMBALI KE DAFTAR CHAT ALL ADMIN (FIXED FOR DETAIL)
+        function bukaDaftarChatDetail() {
+            document.getElementById('modalChatDetailReportLabel').innerText = "Daftar Obrolan Sarpras";
+            document.getElementById('detail-btn-back').classList.add('d-none'); // Sembunyikan panah sementara di list
+
+            document.getElementById('detail-screen-room-chat').classList.add('d-none');
+            document.getElementById('detail-screen-chat-list').classList.remove('d-none');
+
+            const containerDaftar = document.getElementById('detail-container-daftar-admin');
+
+            // Gunakan penanganan snapshot .forEach() agar pembacaan node stabil
+            studentRootRef.once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    containerDaftar.innerHTML =
+                        `<div class="text-center text-muted my-4 py-2 small">Belum ada riwayat obrolan</div>`;
+                    return;
+                }
+
+                let htmlDaftar = "";
+                const batasWaktu7Hari = Date.now() - (7 * 24 * 60 * 60 * 1000); // Batas retensi 7 hari
+
+                snapshot.forEach((adminSnapshot) => {
+                    const adminNodeKey = adminSnapshot.key;
+
+                    let lastMessageText = "Belum ada pesan";
+                    let lastMessageTime = "";
+                    let unreadCount = 0;
+                    let lastTimestamp = 0;
+                    let hasValidMessages = false;
+
+                    // Loop isi pesan di dalam node admin
+                    adminSnapshot.forEach((msgSnapshot) => {
+                        const msgKey = msgSnapshot.key;
+                        const msgData = msgSnapshot.val();
+
+                        // Cek kadaluwarsa 7 hari
+                        if (msgData.timestamp && msgData.timestamp < batasWaktu7Hari) {
+                            studentRootRef.child(`${adminNodeKey}/${msgKey}`).remove();
+                            return;
+                        }
+
+                        hasValidMessages = true;
+                        lastMessageText = msgData.message || "Pesan teks";
+                        lastTimestamp = msgData.timestamp;
+
+                        if (msgData.role !== 'siswa' && msgData.is_read !== true) {
+                            unreadCount++;
+                        }
+                    });
+
+                    // Jika tidak ada pesan valid, lewati admin ini
+                    if (!hasValidMessages) return;
+
+                    if (lastTimestamp) {
+                        const date = new Date(lastTimestamp);
+                        lastMessageTime = date.toLocaleDateString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+
+                    let badgeUnreadHtml = unreadCount > 0 ?
+                        `<span class="badge rounded-pill bg-danger ms-auto" style="font-size: 0.7rem;">${unreadCount}</span>` :
+                        '';
+
+                    const namaAdminAsli = adminNodeKey.replace(/-/g, " ");
+
+                    htmlDaftar += `
+                <div class="d-flex align-items-center p-3 border-bottom list-group-item-action" style="cursor: pointer; transition: 0.2s;" onclick="bukaRoomChatDetail('${adminNodeKey}')">
+                    <img src="https://ui-avatars.com/api/?name=${namaAdminAsli}&background=64748b&color=fff" class="rounded-circle me-3" width="35">
+                    <div class="flex-grow-1" style="max-width: 70%;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="small text-dark d-block text-truncate">${namaAdminAsli}</strong>
+                            <span class="text-muted" style="font-size: 0.65rem;">${lastMessageTime}</span>
+                        </div>
+                        <div class="text-muted small text-truncate" style="font-size:0.75rem; margin-top: 2px;">
+                            ${lastMessageText.includes('📢 *Menanyakan Progres Tiket') ? '🎯 Menanyakan Progres Laporan' : lastMessageText}
+                        </div>
+                    </div>
+                    ${badgeUnreadHtml}
+                </div>
+            `;
+                });
+
+                containerDaftar.innerHTML = htmlDaftar !== "" ? htmlDaftar :
+                    `<div class="text-center text-muted my-4 py-2 small">Belum ada riwayat obrolan</div>`;
+            });
+        }
+        // FUNGSI NAVIGASI 2: KLIK SALAH SATU DAFTAR CHAT MASUK KE ROOM LAGI
+        function bukaRoomChatDetail(adminNodeKey) {
+            currentAdminTarget = adminNodeKey.replace(/-/g, " ");
+            chatDetailRef = database.ref('chats/' + cleanStudentNode + '/' + adminNodeKey);
+
+            // Set Header Title Modal
+            document.getElementById('modalChatDetailReportLabel').innerText = currentAdminTarget;
+            document.getElementById('detail-btn-back').classList.remove('d-none'); // Munculkan panah lagi
+
+            document.getElementById('detail-screen-chat-list').classList.add('d-none');
+            document.getElementById('detail-screen-room-chat').classList.remove('d-none');
+
+            // Tandai pesan sebagai sudah dibaca
+            chatDetailRef.once('value', (snapshot) => {
+                const msgs = snapshot.val();
+                if (msgs) {
+                    Object.keys(msgs).forEach((key) => {
+                        if (msgs[key].role !== 'siswa') {
+                            chatDetailRef.child(key).update({
+                                is_read: true
+                            });
+                        }
+                    });
+                }
+            });
+
+            initRoomChatListener(); // Jalankan stream room chat-nya
+        }
+    </script>
     <script>
         function confirmlogout(btn) {
             MyAlert.show({
@@ -622,10 +938,9 @@
                 showCancel: true,
                 confirmText: 'Ya, Keluar!',
                 cancelText: 'Batal',
-                autoClose: false, // <--- INI KUNCINYA BANG! Biar gak nutup sendiri
-                closeOnOverlay: false, // Biar gak sengaja ke-close pas klik luar box
+                autoClose: false,
+                closeOnOverlay: false,
                 onConfirm: function() {
-                    // Baru beneran hapus kalau diklik "Ya"
                     btn.closest('form').submit();
                 }
             });

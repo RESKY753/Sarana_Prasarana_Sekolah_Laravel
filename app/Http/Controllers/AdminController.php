@@ -206,20 +206,6 @@ class AdminController extends Controller
     {
         //
     }
-    function ProsesLoginAdmin(Request $request)
-    {
-        //ini adalah proses login dengan auth attempt Sumber YT:Awe wewewewe
-        if (Auth::guard('admin')->attempt([
-            'username' => $request->username,
-            'password' => $request->password,
-        ])) {
-            // dd(session()->all()); //unutk mengecek apakh sesi tersimpan saat login
-
-            return redirect()->route('DashboardAdmin')->with('success', 'Behasil Login');
-        }
-        return back()->with('erroradmin', 'Username Password salah');
-        // return redirect()->route('welcome')->with('error', 'Nis atau Passwor Salah');
-    }
     function DasboardAdmin()
     {
         return view('Admin.Dasboard_admin');

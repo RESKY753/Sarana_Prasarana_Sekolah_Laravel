@@ -132,22 +132,6 @@ class SiswaController extends Controller
     {
         //
     }
-
-    function ProsesLoginSiswa(Request $request)
-    {
-        //ini adalah proses login dengan auth attempt Sumber YT:Awe wewewewe
-        if (Auth::guard('siswa')->attempt([
-            'nis' => $request->nis,
-            'password' => $request->password,
-        ])) {
-            // dd(session()->all()); //unutk mengecek apakh sesi tersimpan saat login
-
-            return redirect()->route('DashboardSiswa')->with('success', 'Berhasil Login');
-        }
-
-        return back()->with('error', 'NIS atau Password salah');
-        // return redirect()->route('welcome')->with('error', 'Nis atau Passwor Salah');
-    }
     function DashboardSiswa()
     {
         return view('Siswa.DashboardSiswa');

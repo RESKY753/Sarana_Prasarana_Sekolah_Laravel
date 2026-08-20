@@ -19,4 +19,7 @@ class Aspirasi extends Model
     function ProgresAspirasi(){
         return $this->hasMany(Progres_Aspirasi::class, 'id_aspirasi', 'id_aspirasi');//1 aspirasi memiliki banyak progres
     }
+    function ulasan(){
+        return $this->hasOne(Ulasan::class, 'id_aspirasi', 'id_aspirasi');
+    }
 }

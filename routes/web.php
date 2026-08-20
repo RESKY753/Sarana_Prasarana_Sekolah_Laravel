@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AspirasiController;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProgresController;
 use App\Http\Controllers\SiswaController;
 use App\Models\Admin;
@@ -16,14 +17,7 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 // });
 ///================================tampilan awal alias login==========================================
 Route::get('/', [SiswaController::class, 'welcome'])->name('login');
-
-// ===========================================Proses login siswa=====================================
-Route::post('/ProsesLoginSiswa', [SiswaController::class, 'ProsesLoginSiswa'])
-    ->name('ProsesLoginSiswa');
-
-// ===========================================Proses login admin=====================================
-Route::post('/ProsesLoginAdmin', [AdminController::class, 'ProsesLoginAdmin'])
-    ->name('ProsesLoginAdmin');
+Route::post('/ProsesLogin', [LoginController::class, 'ProsesLogin'])->name('ProsesLogin');
 
 //===========================================Admin===========================================================
 // Semua route yang ada di dalam kurung kurawal grup ini akan diproteksi.
@@ -50,6 +44,7 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('Admin/DataSiswa/Filter', [SiswaController::class, 'filterDataSiswa']);
     Route::delete('Admin/DataSiswa/Hapus/{id}', [SiswaController::class, 'HapusSiswa']);
     Route::get('Admin/Daftar_Aspirasi', [AspirasiController::class, 'DaftarAspirasi']);
+    Route::get('Admin/Ulasan', [AspirasiController::class, 'ulasanSiswa']);
 });
 
 //===========================================================================================================
@@ -72,11 +67,6 @@ Route::middleware(['auth:siswa'])->group(function () {
     Route::post('Siswa/LogoutSiswa', [SiswaController::class, 'LogoutSiswa']);
     Route::get('Siswa/RiwayatAspirasi/Progres/{id}', [AspirasiController::class, 'RiwayatProgresAspirasi']);
     Route::put('Siswa/UpdateProfile', [SiswaController::class, 'updateProfile']);
+    Route::post('Siswa/Ulasan/Simpan', [AspirasiController::class, 'Ulasan']);
 });
 
-Route::get(
-    '/tes',
-    function () {
-        return view('Admin.HistoriAdmin');
-    }
-);

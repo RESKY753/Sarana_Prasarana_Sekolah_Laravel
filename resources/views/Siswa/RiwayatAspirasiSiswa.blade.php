@@ -190,6 +190,7 @@
             display: block;
             text-decoration: none;
             color: inherit;
+            position: relative;
         }
 
         .report-card:hover {
@@ -249,6 +250,41 @@
             font-size: 1.2rem;
         }
 
+        /* --- STYLING BINTANG RATING (TAMBAHAN FITUR ULASAN) --- */
+        .star-rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .star-rating input {
+            display: none;
+        }
+
+        .star-rating label {
+            font-size: 2rem;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out, transform 0.1s ease;
+        }
+
+        .star-rating label:hover,
+        .star-rating label:hover~label,
+        .star-rating input:checked~label {
+            color: #f59e0b;
+        }
+
+        .star-rating label:hover {
+            transform: scale(1.15);
+        }
+
+        /* Z-INDEX SUPAYA TOMBOL DIPRIORITAS KAN PAS DIKLIK MOBILE */
+        .btn-ulasan-action {
+            position: relative;
+            z-index: 10;
+        }
+
         /* --- Responsive --- */
         @media (max-width: 991.98px) {
             .sidebar-wrapper {
@@ -295,7 +331,7 @@
 
     <input type="checkbox" id="menu-control">
     <label for="menu-control" class="sidebar-overlay"></label>
-    {{-- aside --}}
+
     <aside class="sidebar-wrapper">
         <div class="sidebar-header">
             <h2 class="brand-title">Sarpras<span style="color:var(--accent-gold)">Care</span></h2>
@@ -304,7 +340,6 @@
 
         <div class="sidebar-content">
             <nav class="sidebar-menu">
-                {{-- ini adalah tombol untuk berpindah ke halaman dashboard siswa --}}
                 <a href="{{ url('/Siswa/DashboardSiswa') }}" class="nav-item-custom">
                     <i class="fa-solid fa-shapes"></i> Beranda
                 </a>
@@ -318,11 +353,10 @@
         </div>
 
         <div class="sidebar-footer">
-            <!-- Tanpa JS, link logout langsung mengarah ke halaman tujuan -->
             <form action="{{ url('Siswa/LogoutSiswa') }}" method="post">
                 @csrf
-                <button
-                    onclick="confirmlogout(this); return false;" class="btn btn-danger bg-opacity-25 border-0 w-100 py-3 rounded-4 fw-bold text-decoration-none d-block text-center"
+                <button onclick="confirmlogout(this); return false;"
+                    class="btn btn-danger bg-opacity-25 border-0 w-100 py-3 rounded-4 fw-bold text-decoration-none d-block text-center"
                     style="color: #fca5a5;">
                     <i class="fa-solid fa-power-off me-2"></i> Logout
                 </button>
@@ -367,12 +401,10 @@
                         <div class="pill-item">Selesai</div>
                     </div>
 
-                    <!-- List Laporan -->
+              <!-- List Laporan -->
                     @foreach ($aspirasi as $riwayat)
                         <div class="report-list">
-
-                            <!-- Item 1 (Proses) -->
-                            <a href="/Siswa/RiwayatAspirasi/{{ $riwayat->id_aspirasi }}" class="report-card">
+                            <div class="report-card position-relative">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="card-icon">
@@ -383,38 +415,113 @@
                                             <p class="small text-muted mb-0">Tiket: #{{ $riwayat->id_aspirasi }}</p>
                                         </div>
                                     </div>
-                                    @switch($riwayat->status)
-                                        @case('menunggu')
-                                            <span class="status-badge status-pending">{{ $riwayat->status }}</span>
-                                        @break
 
-                                        @case('diproses')
-                                            <span class="status-badge status-process">{{ $riwayat->status }}</span>
-                                        @break
+                                    <!-- POSISI BADGE STATUS & TOMBOL ULASAN -->
+                                    <div class="d-flex flex-column align-items-end gap-2" style="position: relative; z-index: 10;">
+                                        @switch($riwayat->status)
+                                            @case('menunggu')
+                                                <span class="status-badge status-pending">{{ $riwayat->status }}</span>
+                                            @break
 
-                                        @case('selesai')
-                                            <span class="status-badge status-success">{{ $riwayat->status }}</span>
-                                        @break
+                                            @case('diproses')
+                                                <span class="status-badge status-process">{{ $riwayat->status }}</span>
+                                            @break
 
-                                        @case('ditolak')
-                                            <span class="status-badge badge-ditolak">{{ $riwayat->status }}</span>
-                                        @break
+                                            @case('selesai')
+                                                <span class="status-badge status-success">{{ $riwayat->status }}</span>
+                                            @break
 
-                                        <span class="status-badge badge-baru">{{ $riwayat->status }}</span>
+                                            @case('ditolak')
+                                                <span class="status-badge badge-ditolak">{{ $riwayat->status }}</span>
+                                            @break
 
-                                        @default
-                                    @endswitch
+                                            @default
+                                                <span class="status-badge badge-baru">{{ $riwayat->status }}</span>
+                                        @endswitch
+
+                                        <!-- TOMBOL ULASAN -->
+                                        @if ($riwayat->status == 'selesai')
+                                            @if (empty($riwayat->rating))
+                                                <button type="button"
+                                                    class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-3 py-1 btn-ulasan-action"
+                                                    style="font-size: 0.75rem;"
+                                                    onclick="bukaModalUlasan('{{ $riwayat->id_aspirasi }}', '{{ $riwayat->judul_aspirasi }}');">
+                                                    <i class="fa-solid fa-star me-1"></i> Ulas
+                                                </button>
+                                            @else
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-2.5 py-1 btn-ulasan-action"
+                                                    style="font-size: 0.7rem; background-color: #fff8e1;"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalLihatUlasan-{{ $riwayat->id_aspirasi }}">
+                                                    <i class="fa-solid fa-star text-warning me-1"></i> Lihat Ulasan ({{ $riwayat->rating }}/5)
+                                                </button>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </div>
+
                                 <p class="small text-muted mb-3 line-clamp-2">{{ $riwayat->ket_aspirasi }}</p>
+
                                 <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="fa-solid fa-calendar text-muted small"></i>
                                         <span class="small text-muted">{{ $riwayat->tanggal_lapor }}</span>
                                     </div>
-                                    <span class="text-primary small fw-bold">Lihat Detail <i
-                                            class="fa-solid fa-chevron-right ms-1"></i></span>
+
+                                    <!-- STRETCHED LINK (Area Card Bisa Diklik Menuju Detail) -->
+                                    <a href="/Siswa/RiwayatAspirasi/{{ $riwayat->id_aspirasi }}" class="text-primary small fw-bold text-decoration-none stretched-link">
+                                        Lihat Detail <i class="fa-solid fa-chevron-right ms-1"></i>
+                                    </a>
                                 </div>
-                            </a>
+                            </div>
+                        </div>
+
+                        <!-- MODAL LIHAT ULASAN (Wajib Ada di Dalam Loop Foreach) -->
+                        @if ($riwayat->status == 'selesai' && !empty($riwayat->rating))
+                            <div class="modal fade" id="modalLihatUlasan-{{ $riwayat->id_aspirasi }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered my-0 mx-auto" style="max-width: 340px;">
+                                    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+                                        <div class="modal-header bg-warning text-dark border-0 py-2 px-3">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fa-solid fa-star text-dark" style="font-size: 0.85rem;"></i>
+                                                <h6 class="fw-bold mb-0" style="font-size: 0.85rem;">Ulasan Anda</h6>
+                                            </div>
+                                            <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+
+                                        <div class="modal-body p-3 text-center">
+                                            <p class="text-muted small mb-2" style="font-size: 0.75rem;">
+                                                Penanganan laporan: <strong class="text-dark">{{ $riwayat->judul_aspirasi }}</strong>
+                                            </p>
+
+                                            <!-- Rating Bintang -->
+                                            <div class="fs-4 text-warning mb-2">
+                                                @for ($i = 1; $i <= 5; $i++)
+                                                    @if ($i <= $riwayat->rating)
+                                                        <i class="fa-solid fa-star me-1 text-warning" style="font-size: 1.3rem;"></i>
+                                                    @else
+                                                        <i class="fa-regular fa-star me-1 text-muted opacity-50" style="font-size: 1.3rem;"></i>
+                                                    @endif
+                                                @endfor
+                                            </div>
+
+                                            <!-- Catatan Ulasan -->
+                                            <div class="bg-light p-2.5 rounded-3 text-start border">
+                                                <label class="form-label small fw-bold text-muted mb-1 d-block" style="font-size: 0.7rem;">Catatan Anda:</label>
+                                                <p class="mb-0 text-dark small" style="font-size: 0.78rem; font-style: italic;">
+                                                    {{ $riwayat->deskripsi && $riwayat->deskripsi != '-' ? $riwayat->deskripsi : 'Tidak ada catatan tambahan.' }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="modal-footer border-0 p-2 bg-light d-flex justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" style="font-size: 0.75rem;" data-bs-dismiss="modal">Tutup</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     @endforeach
 
                     <!-- Pagination Simple -->
@@ -434,48 +541,117 @@
         </div>
     </main>
 
-</body>
-<script src="{{ asset('Js/MyAlert.js') }}"></script>
-{{-- untuk alert --}}
-<script>
-    // 1. Cek kalau ada pesan sukses dari Controller
-    @if (session('success'))
-        // Ganti 'tampilkanAlert' dengan nama fungsi yang ada di MyAlert.js Abang
-        MyAlert.show({
-            type: 'success',
-            title: 'Berhasil!',
-            message: "{{ session('success') }}",
-            autoClose: 3000, // 3000 = 3 detik
-            confirmText: 'Sip!'
-        });
-    @endif
+    <!-- MODAL BERI ULASAN (Form Input) -->
+    <div class="modal fade" id="modalUlasanSiswa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered my-0 mx-auto" style="max-width: 340px;">
+            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+                <div class="modal-header bg-primary text-white border-0 py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-star text-warning" style="font-size: 0.85rem;"></i>
+                        <h6 class="fw-bold mb-0" style="font-size: 0.85rem;">Beri Ulasan Penanganan</h6>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
 
-    // 2. Cek kalau ada pesan error (misal: login gagal)
-    @if (session('error'))
-        MyAlert.show({
-            type: 'error',
-            title: 'error!',
-            message: '{{ session('error') }}',
-            autoClose: 3000, // 3000 = 3 detik
-            confirmText: 'Sip!'
-        });
-    @endif
-     function confirmlogout(btn) {
-        MyAlert.show({
-            type: 'warning',
-            title: 'Anda akan keluar?',
-            message: 'Kamu akan keluar dari akun ini, Keluar?',
-            showCancel: true,
-            confirmText: 'Ya, Keluar!',
-            cancelText: 'Batal',
-            autoClose: false, // <--- INI KUNCINYA BANG! Biar gak nutup sendiri
-            closeOnOverlay: false, // Biar gak sengaja ke-close pas klik luar box
-            onConfirm: function() {
-                // Baru beneran hapus kalau diklik "Ya"
-                btn.closest('form').submit();
-            }
-        });
-    }
-</script>
+                <form action="{{ url('Siswa/Ulasan/Simpan') }}" method="POST">
+                    @csrf
+                    <div class="modal-body p-2.5 text-center">
+                        <input type="hidden" name="id_aspirasi" id="ulasan_id_aspirasi">
+
+                        <p class="text-muted small mb-1" style="font-size: 0.75rem;">
+                            Bagaimana kepuasanmu terhadap penanganan <strong id="ulasan_judul_tiket" class="text-dark">#SPR</strong>?
+                        </p>
+
+                        <!-- Bintang Rating -->
+                        <div class="mb-1">
+                            @error('rating')
+                                <div class="text-danger small mt-1 fw-bold">{{ $message }}</div>
+                            @enderror
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5" required />
+                                <label for="star5" title="Sangat Puas" style="font-size: 1.4rem;"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star4" name="rating" value="4" />
+                                <label for="star4" title="Puas" style="font-size: 1.4rem;"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star3" name="rating" value="3" />
+                                <label for="star3" title="Cukup" style="font-size: 1.4rem;"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star2" name="rating" value="2" />
+                                <label for="star2" title="Kurang Puas" style="font-size: 1.4rem;"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star1" name="rating" value="1" />
+                                <label for="star1" title="Sangat Kecewa" style="font-size: 1.4rem;"><i class="fa-solid fa-star"></i></label>
+                            </div>
+                            <div class="form-text text-muted mt-0" style="font-size: 0.65rem;">Pilih bintang 1 sampai 5</div>
+                        </div>
+
+                        <!-- Textarea -->
+                        <div class="text-start mb-2">
+                            <label class="form-label small fw-bold text-muted mb-1" style="font-size: 0.7rem;">Catatan Tambahan (Opsional)</label>
+                            <textarea name="deskripsi" class="form-control rounded-3 border-slate-200" rows="2"
+                                style="font-size: 0.75rem; padding: 6px 10px;" placeholder="Tuliskan masukan atau ucapan terima kasih..."></textarea>
+                        </div>
+
+                        <!-- Tombol Kirim -->
+                        <button type="submit" class="btn btn-primary w-100 py-1.5 rounded-3 fw-bold shadow-sm" style="font-size: 0.8rem;">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Kirim Ulasan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('Js/MyAlert.js') }}"></script>
+
+    <script>
+        function bukaModalUlasan(idAspirasi, judulAspirasi) {
+            document.getElementById('ulasan_id_aspirasi').value = idAspirasi;
+            document.getElementById('ulasan_judul_tiket').innerText = '#' + idAspirasi + ' (' + judulAspirasi + ')';
+
+            var modalUlasan = new bootstrap.Modal(document.getElementById('modalUlasanSiswa'));
+            modalUlasan.show();
+        }
+
+        @if (session('success'))
+            MyAlert.show({
+                type: 'success',
+                title: 'Berhasil!',
+                message: "{{ session('success') }}",
+                autoClose: 3000,
+                confirmText: 'Sip!'
+            });
+        @endif
+
+        @if (session('error'))
+            MyAlert.show({
+                type: 'error',
+                title: 'error!',
+                message: '{{ session('error') }}',
+                autoClose: 3000,
+                confirmText: 'Sip!'
+            });
+        @endif
+
+        function confirmlogout(btn) {
+            MyAlert.show({
+                type: 'warning',
+                title: 'Anda akan keluar?',
+                message: 'Kamu akan keluar dari akun ini, Keluar?',
+                showCancel: true,
+                confirmText: 'Ya, Keluar!',
+                cancelText: 'Batal',
+                autoClose: false,
+                closeOnOverlay: false,
+                onConfirm: function() {
+                    btn.closest('form').submit();
+                }
+            });
+        }
+    </script>
+
+</body>
 
 </html>

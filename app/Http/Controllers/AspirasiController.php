@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ulasan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -68,7 +69,7 @@ class AspirasiController extends Controller
         return view('Siswa.DashboardSiswa', compact('aspirasi'));
     }
     function create()
-    {   
+    {
 
         $kategori = DB::table('kategori')
             ->get();
@@ -77,7 +78,7 @@ class AspirasiController extends Controller
     }
     function store(Request $request)
     {
-        $id_siswa = auth('siswa')->user()->id_siswa;//ambil id_siswa dari sesi login
+        $id_siswa = auth('siswa')->user()->id_siswa; //ambil id_siswa dari sesi login
 
         //memebuat validasi untuk form tambah nilai
         $request->validate(
@@ -95,7 +96,7 @@ class AspirasiController extends Controller
             ]
         );
         // perintah untuk memasukan data ketabel nilai
-        DB::table('aspirasi')->insert(//masukan data ke table aspirasi
+        DB::table('aspirasi')->insert( //masukan data ke table aspirasi
             [
                 'id_siswa' => $id_siswa,
                 'id_kategori' => $request->id_kategori,
@@ -110,22 +111,23 @@ class AspirasiController extends Controller
         //arahkan siswa ke dasboard jika tambah laporan berhasil, dengan pesan success
         return redirect('Siswa/DashboardSiswa')->with('success', "Data Berhasil Ditambahkan");
     }
-    function DetailAspirasiSiswa($id){//tampilkan detail aspirasi sesuia id
-        $aspirasi = DB::table('aspirasi')//panggil tabel aspirasi
-            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')//join dengan kategori
-            ->select(//pilih kolom
-            'aspirasi.id_aspirasi',
-            'aspirasi.judul_aspirasi',
-            'aspirasi.tanggal_lapor',
-            'aspirasi.id_kategori',
-            'aspirasi.lokasi',
-            'aspirasi.ket_aspirasi',
-            'kategori.ket_kategori'
+    function DetailAspirasiSiswa($id)
+    { //tampilkan detail aspirasi sesuia id
+        $aspirasi = DB::table('aspirasi') //panggil tabel aspirasi
+            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori') //join dengan kategori
+            ->select( //pilih kolom
+                'aspirasi.id_aspirasi',
+                'aspirasi.judul_aspirasi',
+                'aspirasi.tanggal_lapor',
+                'aspirasi.id_kategori',
+                'aspirasi.lokasi',
+                'aspirasi.ket_aspirasi',
+                'kategori.ket_kategori'
             )
-            ->where('aspirasi.id_aspirasi', $id)//tampilkan detail aspirasi dengan where sesuai dengan id di atas/id_aspirasi
-            ->first();//panggil satu data saja
+            ->where('aspirasi.id_aspirasi', $id) //tampilkan detail aspirasi dengan where sesuai dengan id di atas/id_aspirasi
+            ->first(); //panggil satu data saja
 
-        $progres = DB::table('progres_aspirasi')//paggila tabel progres
+        $progres = DB::table('progres_aspirasi') //paggila tabel progres
             ->join('admin', 'progres_aspirasi.id_admin', '=', 'admin.id_admin')
             ->select(
                 'progres_aspirasi.id_progres',
@@ -136,77 +138,53 @@ class AspirasiController extends Controller
                 'progres_aspirasi.umpan_balik'
             )
             ->where('id_aspirasi', $id)
-            ->orderBy('tanggal_update', 'desc')//kelompokan sesuai tanggal update dan tampilkan data dengan tanggal terbaru paling atas(desc)
-            ->get();//ambil semua datanya
-            //kirim ke Siswa.DetailAspirasi untuk di eksekusi
-            return view('Siswa.DetailAspirasiSiswa', compact('aspirasi', 'progres'));
+            ->orderBy('tanggal_update', 'desc') //kelompokan sesuai tanggal update dan tampilkan data dengan tanggal terbaru paling atas(desc)
+            ->get(); //ambil semua datanya
+        //kirim ke Siswa.DetailAspirasi untuk di eksekusi
+        return view('Siswa.DetailAspirasiSiswa', compact('aspirasi', 'progres'));
     }
-    function RiwayatAspirasiSiswa(){
-        // dd($id, auth('siswa')->user()->id_siswa);
-        // dd(DB::table('aspirasi')
-        //     ->where('id_siswa', 1)
-        //     ->get());
-
+    function RiwayatAspirasiSiswa()
+    {
         $id_siswa = auth('siswa')->user()->id_siswa;
-        // Ambil id siswa yang sedang login dari guard 'siswa'
 
         $aspirasi = DB::table('aspirasi')
-            // Mulai query dari tabel aspirasi
-
             ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
-            // Join ke tabel kategori supaya bisa ambil nama / keterangan kategori
 
             ->leftJoin('progres_aspirasi', function ($join) {
-                // Left join supaya aspirasi tetap tampil
-                // walaupun belum punya progres
-
                 $join->on('aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
-                    // Samakan id_aspirasi di kedua tabel
-
                     ->whereRaw('progres_aspirasi.tanggal_update = (
-            SELECT MAX(tanggal_update)
-            FROM progres_aspirasi
-            WHERE progres_aspirasi.id_aspirasi = aspirasi.id_aspirasi
-        )');
-                // Ambil hanya progres dengan tanggal_update TERBESAR
-                // Artinya: hanya status terbaru
-                // Ini yang mencegah data duplikat
+                    SELECT MAX(tanggal_update)
+                    FROM progres_aspirasi
+                    WHERE progres_aspirasi.id_aspirasi = aspirasi.id_aspirasi
+                )');
             })
 
+            // LEFT JOIN KE TABEL ULASAN
+            ->leftJoin('ulasan', 'aspirasi.id_aspirasi', '=', 'ulasan.id_aspirasi')
+
             ->where('aspirasi.id_siswa', $id_siswa)
-            // Filter supaya hanya ambil aspirasi milik siswa yang login
 
             ->select(
                 'aspirasi.id_aspirasi',
-                // ID aspirasi
-
                 'aspirasi.judul_aspirasi',
-                // Judul laporan
-
                 'aspirasi.tanggal_lapor',
-                // Tanggal laporan dibuat
-
                 'aspirasi.lokasi',
-                // Lokasi kejadian
-
                 'aspirasi.ket_aspirasi',
-                // Isi / deskripsi aspirasi
-
                 'kategori.ket_kategori',
-                // Nama atau keterangan kategori
-
                 'progres_aspirasi.status',
-                // Status TERBARU (hasil subquery max tanggal)
+                'progres_aspirasi.tanggal_update',
 
-                'progres_aspirasi.tanggal_update'
-                // Tanggal update status terbaru
+                // KOLOM DARI TABEL ULASAN
+                'ulasan.rating',
+                'ulasan.deskripsi'
             )
 
             ->get();
-        // Eksekusi query dan ambil semua hasil sebagai collection
+
         return view('Siswa.RiwayatAspirasiSiswa', compact('aspirasi'));
     }
-    function RiwayatDetailAspirasiSiswa($id){
+    function RiwayatDetailAspirasiSiswa($id)
+    {
         $aspirasi = DB::table('aspirasi')
             ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')
             ->select(
@@ -218,7 +196,7 @@ class AspirasiController extends Controller
                 'aspirasi.ket_aspirasi',
                 'kategori.ket_kategori'
             )
-            ->where('aspirasi.id_aspirasi', $id)//tampilkan data sesuai dengan id_aspirasi dengan parameterr di atas
+            ->where('aspirasi.id_aspirasi', $id) //tampilkan data sesuai dengan id_aspirasi dengan parameterr di atas
             ->first();
 
         $progres = DB::table('progres_aspirasi')
@@ -229,7 +207,7 @@ class AspirasiController extends Controller
                 'ket_progres',
                 'umpan_balik'
             )
-            ->where('id_aspirasi', $id)//sama
+            ->where('id_aspirasi', $id) //sama
             ->orderBy('tanggal_update', 'desc')
             ->get();
 
@@ -262,20 +240,38 @@ class AspirasiController extends Controller
                 'umpan_balik'
             )
             ->where('id_aspirasi', $id) //sama
-            ->where('status','menunggu') //sama
+            ->where('status', 'menunggu') //sama
             ->orderBy('tanggal_update', 'desc')
             ->get();
 
         return view('Siswa.RiwayatDetailAspirasiSiswa', compact('aspirasi', 'progres'));
     }
-    function HapusAspirasiSiswa($id){
-        DB::table('aspirasi')//pagil tabel aspirasi
-        ->where('id_aspirasi', $id) //hapus data sesuai dengan id_aspirasi
-        ->delete();//perintah hapus
+    function HapusAspirasiSiswa($id)
+    {
+        DB::table('aspirasi') //pagil tabel aspirasi
+            ->where('id_aspirasi', $id) //hapus data sesuai dengan id_aspirasi
+            ->delete(); //perintah hapus
 
         return redirect('/Siswa/RiwayatAspirasiSiswa')->with('success', 'Data Berhasil Dihapus');
-    
-        }
+    }
+
+    function Ulasan(Request $request)
+    {
+
+        $validated = $request->validate([
+            'id_aspirasi' => 'required',
+            'rating' => 'required',
+            'deskripsi' => 'nullable|string'
+        ], [
+            'rating.required' => 'pilih 1 sampai 5'
+        ]);
+
+        $validated['tanggal'] = now();
+
+        Ulasan::create($validated);
+
+        return redirect('/Siswa/RiwayatAspirasiSiswa')->with('success', 'data berhasil ditambahkan');
+    }
     //=============================Untuk Admin=======================================================================================
 
     function indexAdmin()
@@ -379,6 +375,78 @@ class AspirasiController extends Controller
 
         // Ambil data siswa & kategori buat isi dropdown di Modal (kalau mau tambah data)
         $dataSiswa = DB::table('siswa')->get();
+        $menunggu = DB::table('aspirasi')
+            // 1. Tempelkan tabel progres (pake Left Join biar yang NULL/Baru tetep kehitung)
+            ->leftJoin('progres_aspirasi', 'aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
+
+            // 2. KUNCI UTAMA: Hanya ambil baris progres yang ID-nya paling besar (Terbaru)
+            // Ini biar kalau ada 10 riwayat, yang diambil cuma 1 yang paling baru
+            ->whereIn('progres_aspirasi.id_progres', function ($query) {
+                $query->selectRaw('MAX(id_progres)')
+                    ->from('progres_aspirasi')
+                    ->groupBy('id_aspirasi');
+            })
+
+            // 3. Baru deh filter statusnya (Menunggu atau Diproses)
+            ->whereIn('progres_aspirasi.status', ['menunggu'])
+
+            // 4. Eksekusi hitung
+            ->count();
+
+        $proses = DB::table('aspirasi')
+            // 1. Tempelkan tabel progres (pake Left Join biar yang NULL/Baru tetep kehitung)
+            ->leftJoin('progres_aspirasi', 'aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
+
+            // 2. KUNCI UTAMA: Hanya ambil baris progres yang ID-nya paling besar (Terbaru)
+            // Ini biar kalau ada 10 riwayat, yang diambil cuma 1 yang paling baru
+            ->whereIn('progres_aspirasi.id_progres', function ($query) {
+                $query->selectRaw('MAX(id_progres)')
+                    ->from('progres_aspirasi')
+                    ->groupBy('id_aspirasi');
+            })
+
+            // 3. Baru deh filter statusnya (Menunggu atau Diproses)
+            ->whereIn('progres_aspirasi.status', ['diproses'])
+
+            // 4. Eksekusi hitung
+            ->count();
+
+        $selesai = DB::table('aspirasi')
+            // 1. Tempelkan tabel progres (pake Left Join biar yang NULL/Baru tetep kehitung)
+            ->leftJoin('progres_aspirasi', 'aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
+
+            // 2. KUNCI UTAMA: Hanya ambil baris progres yang ID-nya paling besar (Terbaru)
+            // Ini biar kalau ada 10 riwayat, yang diambil cuma 1 yang paling baru
+            ->whereIn('progres_aspirasi.id_progres', function ($query) {
+                $query->selectRaw('MAX(id_progres)')
+                    ->from('progres_aspirasi')
+                    ->groupBy('id_aspirasi');
+            })
+
+            // 3. Baru deh filter statusnya (Menunggu atau Diproses)
+            ->whereIn('progres_aspirasi.status', ['selesai'])
+
+            // 4. Eksekusi hitung
+            ->count();
+
+        $ditolak = DB::table('aspirasi')
+            // 1. Tempelkan tabel progres (pake Left Join biar yang NULL/Baru tetep kehitung)
+            ->leftJoin('progres_aspirasi', 'aspirasi.id_aspirasi', '=', 'progres_aspirasi.id_aspirasi')
+
+            // 2. KUNCI UTAMA: Hanya ambil baris progres yang ID-nya paling besar (Terbaru)
+            // Ini biar kalau ada 10 riwayat, yang diambil cuma 1 yang paling baru
+            ->whereIn('progres_aspirasi.id_progres', function ($query) {
+                $query->selectRaw('MAX(id_progres)')
+                    ->from('progres_aspirasi')
+                    ->groupBy('id_aspirasi');
+            })
+
+            // 3. Baru deh filter statusnya (Menunggu atau Diproses)
+            ->whereIn('progres_aspirasi.status', ['ditolak'])
+
+            // 4. Eksekusi hitung
+            ->count();
+        // $totalData = DB::table('aspirasi')->count();
         $kategori = DB::table('kategori')->get();
 
         /**
@@ -386,7 +454,7 @@ class AspirasiController extends Controller
          * Cara simpel buat ngirim banyak variabel ke file Blade.
          * Nama variabel di dalam kurung harus sama persis dengan nama variabel di atas.
          */
-        return view('Admin.Dasboard_admin', compact('data', 'aspirasi', 'totalData', 'dataSiswa', 'kategori'));
+        return view('Admin.Dasboard_admin', compact('data', 'aspirasi', 'totalData', 'menunggu', 'selesai', 'ditolak', 'proses', 'dataSiswa', 'kategori'));
     }
 
 
@@ -472,6 +540,7 @@ class AspirasiController extends Controller
         // Hitung total laporan buat di kotak statistik
         $totalData = DB::table('aspirasi')->count();
 
+
         // Ambil data siswa & kategori buat isi dropdown di Modal (kalau mau tambah data)
         $dataSiswa = DB::table('siswa')->get();
         $kategori = DB::table('kategori')->get();
@@ -481,15 +550,16 @@ class AspirasiController extends Controller
          * Cara simpel buat ngirim banyak variabel ke file Blade.
          * Nama variabel di dalam kurung harus sama persis dengan nama variabel di atas.
          */
+
         return view('Admin.DaftarAspirasi', compact('data', 'aspirasi', 'totalData', 'dataSiswa', 'kategori'));
     }
     ///belum di benerin
     function DetailAspirasiAdmin($id)
     {   //panggil tabel aspirasi di variabel data
         $data = DB::table('aspirasi')
-            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori')//join dengan tabel kategori unutk mengambil keterangan kategori
-            ->join('siswa','aspirasi.id_siswa','=','siswa.id_siswa')//join dengan tabel siswa untuk mengambil Nama siswa
-            ->select(//pilih kolom yang ingin di tampilkan
+            ->join('kategori', 'aspirasi.id_kategori', '=', 'kategori.id_kategori') //join dengan tabel kategori unutk mengambil keterangan kategori
+            ->join('siswa', 'aspirasi.id_siswa', '=', 'siswa.id_siswa') //join dengan tabel siswa untuk mengambil Nama siswa
+            ->select( //pilih kolom yang ingin di tampilkan
                 'aspirasi.id_aspirasi',
                 'aspirasi.judul_aspirasi',
                 'aspirasi.tanggal_lapor',
@@ -499,8 +569,8 @@ class AspirasiController extends Controller
                 'kategori.ket_kategori',
                 'siswa.Nama'
             )
-            ->where('aspirasi.id_aspirasi', $id)//tampilkan aspirasi sesuai dengan id aspirasi dengan where
-            ->first();//panggil data pertamannya saja
+            ->where('aspirasi.id_aspirasi', $id) //tampilkan aspirasi sesuai dengan id aspirasi dengan where
+            ->first(); //panggil data pertamannya saja
         // panggil tabel progres aspirasi di varibel progres
         $progres = DB::table('progres_aspirasi')
             ->select(
@@ -511,16 +581,17 @@ class AspirasiController extends Controller
                 'umpan_balik'
             )
             ->where('id_aspirasi', $id)
-            ->orderBy('tanggal_update', 'desc')//kelompokan berdasarkan tanggaal update,yang dimana tanggal yang paling baru akan tampil di paling atas(decs)
-            ->get();//get = ambil semua data
-            // kirim variabel data dan progres ke Admin.Dashboard_admin blade
+            ->orderBy('tanggal_update', 'desc') //kelompokan berdasarkan tanggaal update,yang dimana tanggal yang paling baru akan tampil di paling atas(decs)
+            ->get(); //get = ambil semua data
+        // kirim variabel data dan progres ke Admin.Dashboard_admin blade
         return view('Admin.Dasboard_admin', compact('data', 'progres'));
     }
-    function RiwayatAdmin(){
-        $id_admin = auth()->guard('admin')->user()->id_admin;//mengambil id_admin dari sesi login admin
-        $p = DB::table('progres_aspirasi')//panggil tabel
-            ->join('aspirasi', 'progres_aspirasi.id_aspirasi', '=', 'aspirasi.id_aspirasi')//join tabel aspirasi
-            ->select(//pilih data kolom yang ingin di tampilkan
+    function RiwayatAdmin()
+    {
+        $id_admin = auth()->guard('admin')->user()->id_admin; //mengambil id_admin dari sesi login admin
+        $p = DB::table('progres_aspirasi') //panggil tabel
+            ->join('aspirasi', 'progres_aspirasi.id_aspirasi', '=', 'aspirasi.id_aspirasi') //join tabel aspirasi
+            ->select( //pilih data kolom yang ingin di tampilkan
                 'progres_aspirasi.id_aspirasi',
                 'progres_aspirasi.tanggal_update',
                 'progres_aspirasi.umpan_balik',
@@ -528,8 +599,8 @@ class AspirasiController extends Controller
                 'progres_aspirasi.ket_progres',
                 'aspirasi.judul_aspirasi'
             )
-            ->where('id_admin', $id_admin)//tampilkan data sesuai id_admin dengan where yang variabel tadi kita buat
-            ->orderBy('tanggal_update', 'desc')//kelompokan data berdasarkan tanggal uppdate, dan tampilkan data dengan tanggal update yang terbaru paling atas
+            ->where('id_admin', $id_admin) //tampilkan data sesuai id_admin dengan where yang variabel tadi kita buat
+            ->orderBy('tanggal_update', 'desc') //kelompokan data berdasarkan tanggal uppdate, dan tampilkan data dengan tanggal update yang terbaru paling atas
             ->get(); ///hasil colection atau banyak data karena tidak menggunakan first
 
         // 2. Gunakan method map() untuk "memodifikasi" setiap baris data
@@ -654,7 +725,38 @@ class AspirasiController extends Controller
          * [7] PENGIRIMAN DATA
          * compact -> Membungkus semua variabel tadi untuk dilempar ke file Blade.
          */
-        return view('Admin.Dasboard_admin', compact('data','aspirasi', 'totalData', 'dataSiswa', 'kategori'));
+        return view('Admin.Dasboard_admin', compact('data', 'aspirasi', 'totalData', 'dataSiswa', 'kategori'));
     }
 
+    function ulasanSiswa()
+    {
+        //         SELECT s.Nama, u.rating, u.deskripsi, a.id_aspirasi, a.tanggal_lapor, a.judul_aspirasi FROM `ulasan` AS u
+        // INNER JOIN aspirasi AS a
+        // ON u.id_aspirasi = a.id_aspirasi
+        // INNER JOIN siswa AS s
+        // ON a.id_siswa = s.id_siswa;
+
+        $ulasan = DB::table('ulasan')
+        ->join('aspirasi', 'ulasan.id_aspirasi', '=', 'aspirasi.id_aspirasi')
+        ->join( 'siswa','aspirasi.id_siswa', '=' , 'siswa.id_siswa')
+        ->join( 'kategori','aspirasi.id_kategori', '=' , 'kategori.id_kategori')
+        ->select(
+            'aspirasi.id_aspirasi',
+            'aspirasi.judul_aspirasi',
+            'siswa.id_siswa',
+            'siswa.Nama',
+            'siswa.kelas',
+            'ulasan.rating',
+            'ulasan.deskripsi',
+            'ulasan.tanggal',
+            'kategori.ket_kategori'
+        )
+
+        ->get();
+        $totalUlasan = $ulasan->count(); 
+        $Rata_rata = number_format(DB::table('ulasan')->sum('rating')/$totalUlasan,2);
+        $ulasanPositif = DB::table('ulasan')->where('rating', '>=', 4)->count();
+        $perluEvaluasi = DB::table('ulasan')->where('rating', '<=', 3)->count();
+        return view('Admin.Ulasan', compact('ulasan', 'totalUlasan', 'Rata_rata', 'ulasanPositif', 'perluEvaluasi'));
+    }
 }
