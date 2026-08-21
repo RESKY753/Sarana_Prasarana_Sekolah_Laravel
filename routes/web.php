@@ -70,3 +70,6 @@ Route::middleware(['auth:siswa'])->group(function () {
     Route::post('Siswa/Ulasan/Simpan', [AspirasiController::class, 'Ulasan']);
 });
 
+Route::get('/s', function(){
+    return view('components.admin_sidebar');
+});
